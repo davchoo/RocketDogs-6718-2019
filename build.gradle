@@ -35,6 +35,12 @@ deploy {
     }
 }
 
+task deployRobot {
+    dependsOn 'deployFrcStaticFileDeployRoborio'
+    dependsOn 'deployFrcJavaRoborio'
+    tasks.findByName('deployFrcJavaRoborio').dependsOn('deployFrcStaticFileDeployRoborio')
+}
+
 // Set this to true to enable desktop support.
 def includeDesktopSupport = true
 

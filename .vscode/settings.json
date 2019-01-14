@@ -10,5 +10,6 @@
     ".classpath": true,
     ".project": true
   },
-  "wpilib.online": true
+  "wpilib.online": true,
+  "files.eol": "\n" // Force Linux LF line endings. Required to make runCamera runnable
 }

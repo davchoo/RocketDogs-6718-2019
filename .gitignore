@@ -156,9 +156,14 @@ gradle-app.setting
 .settings/
 bin/
 
+# End of https://www.gitignore.io/api/c++,java,linux,macos,gradle,windows,visualstudiocode
+
 # # Intellij IDEA project files
 *.ipr
 *.iws
 *.iml
 
-# End of https://www.gitignore.io/api/c++,java,linux,macos,gradle,windows,visualstudiocode
+// Replace "vision" with installed folder if different
+
+vision/bin    // Ignore build directories
+vision/build
