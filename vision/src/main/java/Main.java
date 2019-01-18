@@ -5,26 +5,17 @@
 /* the project.                                                               */
 /*----------------------------------------------------------------------------*/
 
+import com.google.gson.*;
+import edu.wpi.cscore.VideoSource;
+import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.vision.VisionThread;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
-import edu.wpi.cscore.VideoSource;
-import edu.wpi.first.cameraserver.CameraServer;
-import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.vision.VisionPipeline;
-import edu.wpi.first.vision.VisionThread;
-
-import org.opencv.core.Mat;
 
 /*
    JSON format:
@@ -178,18 +169,6 @@ public final class Main {
 	}
 
 	/**
-	 * Example pipeline.
-	 */
-	public static class MyPipeline implements VisionPipeline {
-		public int val;
-
-		@Override
-		public void process(Mat mat) {
-			val += 1;
-		}
-	}
-
-	/**
 	 * Main.
 	 */
 	public static void main(String... args) {
@@ -220,16 +199,11 @@ public final class Main {
 
 		// start image processing on camera 0 if present
 		if (cameras.size() >= 1) {
+		    System.out.println("Its working");
 			VisionThread visionThread = new VisionThread(cameras.get(0),
-							new MyPipeline(), pipeline -> {
+							new VisionTargetPipeline(cameras.get(0)), pipeline -> {
 				// do something with pipeline results
 			});
-			/* something like this for GRIP:
-			VisionThread visionThread = new VisionThread(cameras.get(0),
-							new GripPipeline(), pipeline -> {
-				...
-			});
-			 */
 			visionThread.start();
 		}
 

@@ -79,6 +79,7 @@ deploy {
 			file = file('runCamera')                              // The default runCamera for uploaded jars
 			
 			postdeploy << { execute '/bin/chmod +x ./runCamera' } // Make executable
+			postdeploy << { execute '/usr/bin/sudo svc -t /service/camera' } // Terminate camera service to restart app
 		}
 		
 	}
