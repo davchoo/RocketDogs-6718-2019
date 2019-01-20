@@ -6,12 +6,18 @@
 /*----------------------------------------------------------------------------*/
 
 import com.google.gson.*;
+import edu.wpi.cscore.CameraServerJNI;
+import edu.wpi.cscore.MjpegServer;
+import edu.wpi.cscore.UsbCamera;
 import edu.wpi.cscore.VideoSource;
 import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.vision.VisionThread;
+import org.opencv.core.RotatedRect;
 
 import java.io.IOException;
+import java.lang.annotation.Target;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -38,7 +44,15 @@ import java.util.List;
                        "name": <property name>
                        "value": <property value>
                    }
-               ]
+               ],
+               "stream": {                              // optional
+                   "properties": [
+                       {
+                           "name": <stream property name>
+                           "value": <stream property value>
+                       }
+                   ]
+               }
            }
        ]
    }
@@ -52,6 +66,7 @@ public final class Main {
 		public String name;
 		public String path;
 		public JsonObject config;
+		public JsonElement streamConfig;
 	}
 
 	public static int team;
@@ -89,6 +104,9 @@ public final class Main {
 			return false;
 		}
 		cam.path = pathElement.getAsString();
+
+		// stream properties
+		cam.streamConfig = config.get("stream");
 
 		cam.config = config;
 
@@ -158,12 +176,16 @@ public final class Main {
 	 */
 	public static VideoSource startCamera(CameraConfig config) {
 		System.out.println("Starting camera '" + config.name + "' on " + config.path);
-		VideoSource camera = CameraServer.getInstance().startAutomaticCapture(
-				config.name, config.path);
+		CameraServer inst = CameraServer.getInstance();
+		UsbCamera camera = new UsbCamera(config.name, config.path);
+		inst.addCamera(camera); // For some reason startAutomaticCapture doesn't return MjpegServer in this version
+		MjpegServer server = inst.addServer("serve_" + camera.getName());
+		server.setSource(camera);
 
 		Gson gson = new GsonBuilder().create();
 
 		camera.setConfigJson(gson.toJson(config.config));
+		camera.setConnectionStrategy(VideoSource.ConnectionStrategy.kKeepOpen);
 
 		return camera;
 	}
@@ -197,12 +219,75 @@ public final class Main {
 			cameras.add(startCamera(cameraConfig));
 		}
 
+		NetworkTable visionRoot = ntinst.getTable("vision");
+		NetworkTable contours = visionRoot.getSubTable("contours");
+		NetworkTable targetPairs = visionRoot.getSubTable("targetPairs");
+
 		// start image processing on camera 0 if present
 		if (cameras.size() >= 1) {
 		    System.out.println("Its working");
 			VisionThread visionThread = new VisionThread(cameras.get(0),
 							new VisionTargetPipeline(cameras.get(0)), pipeline -> {
-				// do something with pipeline results
+				double[] x = new double[pipeline.contourBB.size()];
+				double[] y = new double[pipeline.contourBB.size()];
+				double[] angle = new double[pipeline.contourBB.size()];
+				double[] w = new double[pipeline.contourBB.size()];
+				double[] h = new double[pipeline.contourBB.size()];
+				int i = 0;
+				for (RotatedRect target : pipeline.contourBB) {
+					x[i] = target.center.x;
+					y[i] = target.center.y;
+					angle[i] = target.angle;
+					w[i] = target.size.width;
+					h[i] = target.size.height;
+					i++;
+				}
+				contours.getEntry("x").setDoubleArray(x);
+				contours.getEntry("y").setDoubleArray(y);
+				contours.getEntry("angle").setDoubleArray(angle);
+				contours.getEntry("w").setDoubleArray(w);
+				contours.getEntry("h").setDoubleArray(h);
+
+				double[] leftX = new double[pipeline.targetPairs.size()];
+				double[] leftY = new double[pipeline.targetPairs.size()];
+				double[] leftAngle = new double[pipeline.targetPairs.size()];
+				double[] leftW = new double[pipeline.targetPairs.size()];
+				double[] leftH = new double[pipeline.targetPairs.size()];
+				double[] rightX = new double[pipeline.targetPairs.size()];
+				double[] rightY = new double[pipeline.targetPairs.size()];
+				double[] rightAngle = new double[pipeline.targetPairs.size()];
+				double[] rightW = new double[pipeline.targetPairs.size()];
+				double[] rightH = new double[pipeline.targetPairs.size()];
+				double[] centerX = new double[pipeline.targetPairs.size()];
+				double[] centerY = new double[pipeline.targetPairs.size()];
+				i = 0;
+				for (VisionTargetPipeline.TargetPair targetPair : pipeline.targetPairs) {
+					leftX[i] = targetPair.left.center.x;
+					leftY[i] = targetPair.left.center.y;
+					leftAngle[i] = targetPair.left.angle;
+					leftW[i] = targetPair.left.size.width;
+					leftH[i] = targetPair.left.size.height;
+					rightX[i] = targetPair.right.center.x;
+					rightY[i] = targetPair.right.center.y;
+					rightAngle[i] = targetPair.right.angle;
+					rightW[i] = targetPair.right.size.width;
+					rightH[i] = targetPair.right.size.height;
+					centerX[i] = targetPair.center.x;
+					centerY[i] = targetPair.center.y;
+					i++;
+				}
+				targetPairs.getEntry("leftX").setDoubleArray(leftX);
+				targetPairs.getEntry("leftY").setDoubleArray(leftY);
+				targetPairs.getEntry("leftAngle").setDoubleArray(leftAngle);
+				targetPairs.getEntry("leftW").setDoubleArray(leftW);
+				targetPairs.getEntry("leftH").setDoubleArray(leftH);
+				targetPairs.getEntry("rightX").setDoubleArray(rightX);
+				targetPairs.getEntry("rightY").setDoubleArray(rightY);
+				targetPairs.getEntry("rightAngle").setDoubleArray(rightAngle);
+				targetPairs.getEntry("rightW").setDoubleArray(rightW);
+				targetPairs.getEntry("rightH").setDoubleArray(rightH);
+				targetPairs.getEntry("centerX").setDoubleArray(centerX);
+				targetPairs.getEntry("centerY").setDoubleArray(centerY);
 			});
 			visionThread.start();
 		}
