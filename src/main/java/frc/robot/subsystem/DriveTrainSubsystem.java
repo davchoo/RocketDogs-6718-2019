@@ -53,4 +53,25 @@ public class DriveTrainSubsystem extends Subsystem {
         rightTalon.set(ControlMode.PercentOutput, right);
     }
 
+    public void arcadeDrive(double speed, double zRotation, boolean squareInput) {
+        if (squareInput) {
+            speed = Math.copySign(speed * speed, speed);
+            zRotation = Math.copySign(zRotation * zRotation, zRotation);
+        }
+
+        double leftMotorOutput = speed + zRotation;
+        double rightMotorOutput = speed - zRotation;
+
+        double max = Math.max(Math.abs(leftMotorOutput), Math.abs(rightMotorOutput));
+
+        leftMotorOutput /= max;
+        rightMotorOutput /= max;
+
+        percentageOutput(leftMotorOutput, rightMotorOutput);
+    }
+
+    public void stop() {
+        percentageOutput(0, 0);
+    }
+
 }
