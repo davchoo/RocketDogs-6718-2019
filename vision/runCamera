@@ -2,4 +2,4 @@
 ### TYPE: upload-java
 echo "Waiting 5 seconds..."
 sleep 5
-exec env LD_LIBRARY_PATH=/usr/local/frc/lib java -jar uploaded.jar
+exec env LD_LIBRARY_PATH=/usr/local/frc/lib java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -jar uploaded.jar
