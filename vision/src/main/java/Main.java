@@ -6,9 +6,9 @@
 /*----------------------------------------------------------------------------*/
 
 import com.google.gson.*;
-import edu.wpi.cscore.CameraServerJNI;
 import edu.wpi.cscore.MjpegServer;
 import edu.wpi.cscore.UsbCamera;
+import edu.wpi.cscore.VideoProperty;
 import edu.wpi.cscore.VideoSource;
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.networktables.NetworkTable;
@@ -17,7 +17,6 @@ import edu.wpi.first.vision.VisionThread;
 import org.opencv.core.RotatedRect;
 
 import java.io.IOException;
-import java.lang.annotation.Target;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -225,69 +224,30 @@ public final class Main {
 
 		// start image processing on camera 0 if present
 		if (cameras.size() >= 1) {
-		    System.out.println("Its working");
-			VisionThread visionThread = new VisionThread(cameras.get(0),
-							new VisionTargetPipeline(cameras.get(0)), pipeline -> {
-				double[] x = new double[pipeline.contourBB.size()];
-				double[] y = new double[pipeline.contourBB.size()];
-				double[] angle = new double[pipeline.contourBB.size()];
-				double[] w = new double[pipeline.contourBB.size()];
-				double[] h = new double[pipeline.contourBB.size()];
-				int i = 0;
-				for (RotatedRect target : pipeline.contourBB) {
-					x[i] = target.center.x;
-					y[i] = target.center.y;
-					angle[i] = target.angle;
-					w[i] = target.size.width;
-					h[i] = target.size.height;
-					i++;
-				}
-				contours.getEntry("x").setDoubleArray(x);
-				contours.getEntry("y").setDoubleArray(y);
-				contours.getEntry("angle").setDoubleArray(angle);
-				contours.getEntry("w").setDoubleArray(w);
-				contours.getEntry("h").setDoubleArray(h);
+			VideoSource camera = cameras.get(0);
+			VideoProperty gain = camera.getProperty("gain");
+			VideoProperty exposureAbsolute  = camera.getProperty("exposure_absolute");
+			gain.set(30);
+			exposureAbsolute.set(0);
+			gain.set(33);
+			exposureAbsolute.set(4);
 
-				double[] leftX = new double[pipeline.targetPairs.size()];
-				double[] leftY = new double[pipeline.targetPairs.size()];
-				double[] leftAngle = new double[pipeline.targetPairs.size()];
-				double[] leftW = new double[pipeline.targetPairs.size()];
-				double[] leftH = new double[pipeline.targetPairs.size()];
-				double[] rightX = new double[pipeline.targetPairs.size()];
-				double[] rightY = new double[pipeline.targetPairs.size()];
-				double[] rightAngle = new double[pipeline.targetPairs.size()];
-				double[] rightW = new double[pipeline.targetPairs.size()];
-				double[] rightH = new double[pipeline.targetPairs.size()];
-				double[] centerX = new double[pipeline.targetPairs.size()];
-				double[] centerY = new double[pipeline.targetPairs.size()];
-				i = 0;
+			System.out.println("Its working");
+			VisionThread visionThread = new VisionThread(camera,
+							new VisionTargetPipeline(camera), pipeline -> {
+				double[] angleToTarget = new double[pipeline.targetPairs.size()];
+				double[] angleFromPerpendicular = new double[pipeline.targetPairs.size()];
+				double[] distance = new double[pipeline.targetPairs.size()];
+				int i = 0;
 				for (VisionTargetPipeline.TargetPair targetPair : pipeline.targetPairs) {
-					leftX[i] = targetPair.left.center.x;
-					leftY[i] = targetPair.left.center.y;
-					leftAngle[i] = targetPair.left.angle;
-					leftW[i] = targetPair.left.size.width;
-					leftH[i] = targetPair.left.size.height;
-					rightX[i] = targetPair.right.center.x;
-					rightY[i] = targetPair.right.center.y;
-					rightAngle[i] = targetPair.right.angle;
-					rightW[i] = targetPair.right.size.width;
-					rightH[i] = targetPair.right.size.height;
-					centerX[i] = targetPair.center.x;
-					centerY[i] = targetPair.center.y;
+					angleToTarget[i] = targetPair.angleToTarget;
+					angleFromPerpendicular[i] = targetPair.angleFromPerpendicular;
+					distance[i] = targetPair.distance;
 					i++;
 				}
-				targetPairs.getEntry("leftX").setDoubleArray(leftX);
-				targetPairs.getEntry("leftY").setDoubleArray(leftY);
-				targetPairs.getEntry("leftAngle").setDoubleArray(leftAngle);
-				targetPairs.getEntry("leftW").setDoubleArray(leftW);
-				targetPairs.getEntry("leftH").setDoubleArray(leftH);
-				targetPairs.getEntry("rightX").setDoubleArray(rightX);
-				targetPairs.getEntry("rightY").setDoubleArray(rightY);
-				targetPairs.getEntry("rightAngle").setDoubleArray(rightAngle);
-				targetPairs.getEntry("rightW").setDoubleArray(rightW);
-				targetPairs.getEntry("rightH").setDoubleArray(rightH);
-				targetPairs.getEntry("centerX").setDoubleArray(centerX);
-				targetPairs.getEntry("centerY").setDoubleArray(centerY);
+				targetPairs.getEntry("angleToTarget").setDoubleArray(angleToTarget);
+				targetPairs.getEntry("angleFromPerpendicular").setDoubleArray(angleFromPerpendicular);
+				targetPairs.getEntry("distance").setDoubleArray(distance);
 			});
 			visionThread.start();
 		}

@@ -15,17 +15,21 @@ public class VisionTargetPipeline implements VisionPipeline {
     private Mat pipelineOutput;
 
     private Mat cameraMatrix;
-    private Mat distCoeffs;
+    private MatOfDouble distCoeffs;
 
     private Mat undistortOutput;
     private Mat hslThresholdOutput;
     private Mat hierarchy;
     private ArrayList<MatOfPoint> contours;
     private ArrayList<MatOfPoint> filteredContours;
-    public ArrayList<RotatedRect> contourBB;
+    private ArrayList<RotatedRect> contourBB;
     private ArrayList<MatOfPoint> contourBBPoints;
     private ArrayList<RotatedRect> leftTargets, rightTargets;
     public ArrayList<TargetPair> targetPairs;
+    private MatOfPoint2f pairTargetPoints;
+    private Point[] pairTargetPointsArray;
+    private Point[] targetPoints;
+    private Mat rvec, tvec, rot, pzeroWorld;
 
     private Profiler profiler;
 
@@ -41,15 +45,25 @@ public class VisionTargetPipeline implements VisionPipeline {
     private final Scalar CONTOUR_COLOR = new Scalar(0, 0, 255, 255); // BGRA
     private final Scalar BOUNDING_BOX_COLOR = new Scalar(255, 0, 0, 255); // BGRA
 
-    // 5.08cm x 13.97cm
-    private final double VISION_TARGET_WIDTH = 5.08;
-    private final double VISION_TARGET_HEIGHT = 13.97;
-    private final double VISION_TARGET_BETWEEN_CENTERS = 28.836;
+    // https://www.desmos.com/calculator/qnarpoj3i9
+    private final MatOfPoint3f VISION_TARGET = new MatOfPoint3f(
+            new Point3(-18.576, -6.127, 0),
+            new Point3(-15.078, 7.398, 0),
+            new Point3(-10.16, 6.127, 0),
+            new Point3(-13.658, -7.398, 0),
+
+            new Point3(13.658, -7.398, 0),
+            new Point3(10.16, 6.127, 0),
+            new Point3(15.078, 7.398, 0),
+            new Point3(18.576, -6.127, 0)
+        );
 
     class TargetPair {
         public RotatedRect left, right;
         public Point center, lowest, highest;
-        public double closestDistance;
+
+        public double angleToTarget, angleFromPerpendicular, distance;
+        public boolean calculated;
 
         public TargetPair(RotatedRect left, RotatedRect right) {
             this.left = left;
@@ -57,34 +71,49 @@ public class VisionTargetPipeline implements VisionPipeline {
             center = new Point((left.center.x + right.center.x) / 2d, (left.center.y + right.center.y) / 2d);
             lowest = new Point(1e10, 1e10);
             highest = new Point(0, 0);
+
             Point[] points = new Point[4];
             left.points(points);
-            double leftClosestX = 0;
             for (Point point: points) {
                 lowest.x = Math.min(lowest.x, point.x);
                 lowest.y = Math.min(lowest.y, point.y);
                 highest.y = Math.max(highest.y, point.y);
-                leftClosestX = Math.max(leftClosestX, point.x);
             }
 
             right.points(points);
-            double rightClosestX = 1e100;
             for (Point point: points) {
                 lowest.y = Math.min(lowest.y, point.y);
                 highest.x = Math.max(highest.x, point.x);
                 highest.y = Math.max(highest.y, point.y);
-                rightClosestX = Math.min(rightClosestX, point.x);
             }
-            closestDistance = rightClosestX - leftClosestX;
+        }
+
+        public void calculate() {
+            calculated = true;
+            left.points(pairTargetPointsArray);
+            right.points(targetPoints);
+            System.arraycopy(targetPoints, 0, pairTargetPointsArray, 4, 4);
+            pairTargetPoints.fromArray(pairTargetPointsArray);
+            Calib3d.solvePnP(VISION_TARGET, pairTargetPoints, cameraMatrix, distCoeffs, rvec, tvec, false, Calib3d.SOLVEPNP_EPNP);
+
+            double x = tvec.get(0, 0)[0];
+            double z = tvec.get(2, 0)[0]; // Probably would be much cleaner in python :c
+            distance = Math.sqrt(x * x + z * z);
+            angleToTarget = Math.toDegrees(Math.atan2(x, z));
+
+            Calib3d.Rodrigues(rvec, rot);
+            Core.gemm(rot, tvec, -1, new MatOfDouble(0), 0, pzeroWorld, Core.GEMM_1_T);
+            x = pzeroWorld.get(0, 0)[0];
+            z = pzeroWorld.get(2, 0)[0];
+            angleFromPerpendicular = Math.toDegrees(Math.atan2(x, z));
         }
     }
 
     public VisionTargetPipeline(VideoSource source) {
         cameraMatrix = new Mat(3, 3, CvType.CV_32F);
-        cameraMatrix.put(0, 0, 286.03910029056937, 0, 144.5345412035536, 0, 286.03910029056937, 91.2870399220077, 0., 0., 1.);
-
-        distCoeffs = new Mat(1, 5, CvType.CV_32F);
-        distCoeffs.put(0, 0, 0, 0, 0, 0, 1.5150660683721835);
+        //1.3586586245483457e+02, 8.5375394365975524e+01
+        cameraMatrix.put(0, 0, 338.94958622337884,0., 160, 0., 338.94958622337884, 88, 0., 0., 1.);
+        distCoeffs = new MatOfDouble(0., 1.3115966339993879, 0., 0., -4.389076081209448);
         VideoMode mode = source.getVideoMode();
         int width = mode.width;
         int height = mode.height;
@@ -103,6 +132,13 @@ public class VisionTargetPipeline implements VisionPipeline {
         leftTargets = new ArrayList<>();
         rightTargets = new ArrayList<>();
         targetPairs = new ArrayList<>();
+        pairTargetPoints = new MatOfPoint2f();
+        pairTargetPointsArray = new Point[8];
+        targetPoints = new Point[4];
+        rvec = new Mat();
+        tvec = new Mat();
+        rot = new Mat();
+        pzeroWorld = new Mat();
 
         profiler = new Profiler();
 
@@ -143,7 +179,6 @@ public class VisionTargetPipeline implements VisionPipeline {
         contourBBPoints.clear();
         leftTargets.clear();
         rightTargets.clear();
-        Point[] points = new Point[4];
         for (MatOfPoint contour : filteredContours) {
             RotatedRect BB = Imgproc.minAreaRect(new MatOfPoint2f(contour.toArray()));
             // Fix angles and sizes
@@ -155,8 +190,8 @@ public class VisionTargetPipeline implements VisionPipeline {
             }
             double ratio = BB.size.width / BB.size.height;
             if (ratio < MAX_CONTOUR_RATIO && Math.abs(BB.angle) < MAX_ABSOLUTE_ANGLE) {
-                BB.points(points);
-                contourBBPoints.add(new MatOfPoint(points));
+                BB.points(targetPoints);
+                contourBBPoints.add(new MatOfPoint(targetPoints));
                 contourBB.add(BB);
                 if (BB.angle > 0) {
                     leftTargets.add(BB);
@@ -196,13 +231,14 @@ public class VisionTargetPipeline implements VisionPipeline {
                         new Point(pair.lowest.x, pair.lowest.y),
                         new Point(pair.highest.x, pair.highest.y),
                         new Scalar(0, 255, 255, 255), 2);
-                Imgproc.rectangle(pipelineOutput,
-                        new Point(pair.center.x - pair.closestDistance / 2d, pair.lowest.y),
-                        new Point(pair.center.x + pair.closestDistance / 2d, pair.highest.y),
-                        new Scalar(255, 0, 255, 255), 2);
             }
         }
         profiler.section("Draw Pairs");
+        // Calculate angle
+        for (TargetPair pair : targetPairs) {
+            pair.calculate();
+        }
+        profiler.section("Calculate angles and distance");
 
         // Display Pipeline Output
         pipelineOutputSource.putFrame(pipelineOutput);
