@@ -1,7 +1,6 @@
 package frc.robot.commands;
 
 import edu.wpi.first.wpilibj.command.Command;
-import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import frc.robot.OI;
 import frc.robot.Robot;
 
@@ -14,7 +13,7 @@ public class OIDriverCommand extends Command {
 
     @Override
     protected void initialize() {
-        Robot.driveTrainSubsystem.stop();
+        Robot.driveTrainSubsystem.disable();
     }
 
     @Override
@@ -26,12 +25,12 @@ public class OIDriverCommand extends Command {
 
     @Override
     protected void interrupted() {
-        Robot.driveTrainSubsystem.stop();
+        Robot.driveTrainSubsystem.disable();
     }
 
     @Override
     protected void end() {
-        Robot.driveTrainSubsystem.stop();
+        Robot.driveTrainSubsystem.disable();
     }
 
     @Override
