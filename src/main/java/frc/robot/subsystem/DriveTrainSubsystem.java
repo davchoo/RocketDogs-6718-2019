@@ -25,7 +25,7 @@ public class DriveTrainSubsystem extends Subsystem {
 
     private Notifier motionProfileNotifier;
 
-    private enum Status {
+    public enum Status {
         kNotReady, kReady, kInProgress, kDone
     }
 
