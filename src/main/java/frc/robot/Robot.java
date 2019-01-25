@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.commands.OIDriverCommand;
 import frc.robot.subsystem.DriveTrainSubsystem;
+import frc.robot.subsystem.VisionSubsystem;
 
 public class Robot extends TimedRobot {
     private static final String kDefaultAuto = "Default";
@@ -24,6 +25,7 @@ public class Robot extends TimedRobot {
     public static OI oi;
 
     public static DriveTrainSubsystem driveTrainSubsystem;
+    public static VisionSubsystem visionSubsystem;
 
 
     /**
@@ -34,6 +36,7 @@ public class Robot extends TimedRobot {
     public void robotInit() {
         Robot.oi = new OI();
         Robot.driveTrainSubsystem = new DriveTrainSubsystem();
+        Robot.visionSubsystem = new VisionSubsystem();
 
         m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
         m_chooser.addOption("My Auto", kCustomAuto);
