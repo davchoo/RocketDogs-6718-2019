@@ -24,11 +24,6 @@ public class OIDriverCommand extends Command {
     }
 
     @Override
-    protected void interrupted() {
-        Robot.driveTrainSubsystem.disable();
-    }
-
-    @Override
     protected void end() {
         Robot.driveTrainSubsystem.disable();
     }

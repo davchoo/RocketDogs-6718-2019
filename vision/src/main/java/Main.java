@@ -14,7 +14,6 @@ import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.vision.VisionThread;
-import org.opencv.core.RotatedRect;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -58,206 +57,206 @@ import java.util.List;
  */
 
 public final class Main {
-	private static String configFile = "/boot/frc.json";
+    private static String configFile = "/boot/frc.json";
 
-	@SuppressWarnings("MemberName")
-	public static class CameraConfig {
-		public String name;
-		public String path;
-		public JsonObject config;
-		public JsonElement streamConfig;
-	}
+    @SuppressWarnings("MemberName")
+    public static class CameraConfig {
+        public String name;
+        public String path;
+        public JsonObject config;
+        public JsonElement streamConfig;
+    }
 
-	public static int team;
-	public static boolean server;
-	public static List<CameraConfig> cameraConfigs = new ArrayList<>();
+    public static int team;
+    public static boolean server;
+    public static List<CameraConfig> cameraConfigs = new ArrayList<>();
 
-	private Main() {
-	}
+    private Main() {
+    }
 
-	/**
-	 * Report parse error.
-	 */
-	public static void parseError(String str) {
-		System.err.println("config error in '" + configFile + "': " + str);
-	}
+    /**
+     * Report parse error.
+     */
+    public static void parseError(String str) {
+        System.err.println("config error in '" + configFile + "': " + str);
+    }
 
-	/**
-	 * Read single camera configuration.
-	 */
-	public static boolean readCameraConfig(JsonObject config) {
-		CameraConfig cam = new CameraConfig();
+    /**
+     * Read single camera configuration.
+     */
+    public static boolean readCameraConfig(JsonObject config) {
+        CameraConfig cam = new CameraConfig();
 
-		// name
-		JsonElement nameElement = config.get("name");
-		if (nameElement == null) {
-			parseError("could not read camera name");
-			return false;
-		}
-		cam.name = nameElement.getAsString();
+        // name
+        JsonElement nameElement = config.get("name");
+        if (nameElement == null) {
+            parseError("could not read camera name");
+            return false;
+        }
+        cam.name = nameElement.getAsString();
 
-		// path
-		JsonElement pathElement = config.get("path");
-		if (pathElement == null) {
-			parseError("camera '" + cam.name + "': could not read path");
-			return false;
-		}
-		cam.path = pathElement.getAsString();
+        // path
+        JsonElement pathElement = config.get("path");
+        if (pathElement == null) {
+            parseError("camera '" + cam.name + "': could not read path");
+            return false;
+        }
+        cam.path = pathElement.getAsString();
 
-		// stream properties
-		cam.streamConfig = config.get("stream");
+        // stream properties
+        cam.streamConfig = config.get("stream");
 
-		cam.config = config;
+        cam.config = config;
 
-		cameraConfigs.add(cam);
-		return true;
-	}
+        cameraConfigs.add(cam);
+        return true;
+    }
 
-	/**
-	 * Read configuration file.
-	 */
-	@SuppressWarnings("PMD.CyclomaticComplexity")
-	public static boolean readConfig() {
-		// parse file
-		JsonElement top;
-		try {
-			top = new JsonParser().parse(Files.newBufferedReader(Paths.get(configFile)));
-		} catch (IOException ex) {
-			System.err.println("could not open '" + configFile + "': " + ex);
-			return false;
-		}
+    /**
+     * Read configuration file.
+     */
+    @SuppressWarnings("PMD.CyclomaticComplexity")
+    public static boolean readConfig() {
+        // parse file
+        JsonElement top;
+        try {
+            top = new JsonParser().parse(Files.newBufferedReader(Paths.get(configFile)));
+        } catch (IOException ex) {
+            System.err.println("could not open '" + configFile + "': " + ex);
+            return false;
+        }
 
-		// top level must be an object
-		if (!top.isJsonObject()) {
-			parseError("must be JSON object");
-			return false;
-		}
-		JsonObject obj = top.getAsJsonObject();
+        // top level must be an object
+        if (!top.isJsonObject()) {
+            parseError("must be JSON object");
+            return false;
+        }
+        JsonObject obj = top.getAsJsonObject();
 
-		// team number
-		JsonElement teamElement = obj.get("team");
-		if (teamElement == null) {
-			parseError("could not read team number");
-			return false;
-		}
-		team = teamElement.getAsInt();
+        // team number
+        JsonElement teamElement = obj.get("team");
+        if (teamElement == null) {
+            parseError("could not read team number");
+            return false;
+        }
+        team = teamElement.getAsInt();
 
-		// ntmode (optional)
-		if (obj.has("ntmode")) {
-			String str = obj.get("ntmode").getAsString();
-			if ("client".equalsIgnoreCase(str)) {
-				server = false;
-			} else if ("server".equalsIgnoreCase(str)) {
-				server = true;
-			} else {
-				parseError("could not understand ntmode value '" + str + "'");
-			}
-		}
+        // ntmode (optional)
+        if (obj.has("ntmode")) {
+            String str = obj.get("ntmode").getAsString();
+            if ("client".equalsIgnoreCase(str)) {
+                server = false;
+            } else if ("server".equalsIgnoreCase(str)) {
+                server = true;
+            } else {
+                parseError("could not understand ntmode value '" + str + "'");
+            }
+        }
 
-		// cameras
-		JsonElement camerasElement = obj.get("cameras");
-		if (camerasElement == null) {
-			parseError("could not read cameras");
-			return false;
-		}
-		JsonArray cameras = camerasElement.getAsJsonArray();
-		for (JsonElement camera : cameras) {
-			if (!readCameraConfig(camera.getAsJsonObject())) {
-				return false;
-			}
-		}
+        // cameras
+        JsonElement camerasElement = obj.get("cameras");
+        if (camerasElement == null) {
+            parseError("could not read cameras");
+            return false;
+        }
+        JsonArray cameras = camerasElement.getAsJsonArray();
+        for (JsonElement camera : cameras) {
+            if (!readCameraConfig(camera.getAsJsonObject())) {
+                return false;
+            }
+        }
 
-		return true;
-	}
+        return true;
+    }
 
-	/**
-	 * Start running the camera.
-	 */
-	public static VideoSource startCamera(CameraConfig config) {
-		System.out.println("Starting camera '" + config.name + "' on " + config.path);
-		CameraServer inst = CameraServer.getInstance();
-		UsbCamera camera = new UsbCamera(config.name, config.path);
-		inst.addCamera(camera); // For some reason startAutomaticCapture doesn't return MjpegServer in this version
-		MjpegServer server = inst.addServer("serve_" + camera.getName());
-		server.setSource(camera);
+    /**
+     * Start running the camera.
+     */
+    public static VideoSource startCamera(CameraConfig config) {
+        System.out.println("Starting camera '" + config.name + "' on " + config.path);
+        CameraServer inst = CameraServer.getInstance();
+        UsbCamera camera = new UsbCamera(config.name, config.path);
+        inst.addCamera(camera); // For some reason startAutomaticCapture doesn't return MjpegServer in this version
+        MjpegServer server = inst.addServer("serve_" + camera.getName());
+        server.setSource(camera);
 
-		Gson gson = new GsonBuilder().create();
+        Gson gson = new GsonBuilder().create();
 
-		camera.setConfigJson(gson.toJson(config.config));
-		camera.setConnectionStrategy(VideoSource.ConnectionStrategy.kKeepOpen);
+        camera.setConfigJson(gson.toJson(config.config));
+        camera.setConnectionStrategy(VideoSource.ConnectionStrategy.kKeepOpen);
 
-		return camera;
-	}
+        return camera;
+    }
 
-	/**
-	 * Main.
-	 */
-	public static void main(String... args) {
-		if (args.length > 0) {
-			configFile = args[0];
-		}
+    /**
+     * Main.
+     */
+    public static void main(String... args) {
+        if (args.length > 0) {
+            configFile = args[0];
+        }
 
-		// read configuration
-		if (!readConfig()) {
-			return;
-		}
+        // read configuration
+        if (!readConfig()) {
+            return;
+        }
 
-		// start NetworkTables
-		NetworkTableInstance ntinst = NetworkTableInstance.getDefault();
-		if (server) {
-			System.out.println("Setting up NetworkTables server");
-			ntinst.startServer();
-		} else {
-			System.out.println("Setting up NetworkTables client for team " + team);
-			ntinst.startClientTeam(team);
-		}
+        // start NetworkTables
+        NetworkTableInstance ntinst = NetworkTableInstance.getDefault();
+        if (server) {
+            System.out.println("Setting up NetworkTables server");
+            ntinst.startServer();
+        } else {
+            System.out.println("Setting up NetworkTables client for team " + team);
+            ntinst.startClientTeam(team);
+        }
 
-		// start cameras
-		List<VideoSource> cameras = new ArrayList<>();
-		for (CameraConfig cameraConfig : cameraConfigs) {
-			cameras.add(startCamera(cameraConfig));
-		}
+        // start cameras
+        List<VideoSource> cameras = new ArrayList<>();
+        for (CameraConfig cameraConfig : cameraConfigs) {
+            cameras.add(startCamera(cameraConfig));
+        }
 
-		NetworkTable visionRoot = ntinst.getTable("vision");
-		NetworkTable targetPairs = visionRoot.getSubTable("targetPairs");
+        NetworkTable visionRoot = ntinst.getTable("vision");
+        NetworkTable targetPairs = visionRoot.getSubTable("targetPairs");
 
-		// start image processing on camera 0 if present
-		if (cameras.size() >= 1) {
-			VideoSource camera = cameras.get(0);
-			VideoProperty gain = camera.getProperty("gain");
-			VideoProperty exposureAbsolute  = camera.getProperty("exposure_absolute");
-			gain.set(30);
-			exposureAbsolute.set(0);
-			gain.set(33);
-			exposureAbsolute.set(4);
+        // start image processing on camera 0 if present
+        if (cameras.size() >= 1) {
+            VideoSource camera = cameras.get(0);
+            VideoProperty gain = camera.getProperty("gain");
+            VideoProperty exposureAbsolute = camera.getProperty("exposure_absolute");
+            gain.set(30);
+            exposureAbsolute.set(0);
+            gain.set(33);
+            exposureAbsolute.set(4);
 
-			System.out.println("Its working");
-			VisionThread visionThread = new VisionThread(camera,
-							new VisionTargetPipeline(camera), pipeline -> {
-				double[] angleToTarget = new double[pipeline.targetPairs.size()];
-				double[] angleFromPerpendicular = new double[pipeline.targetPairs.size()];
-				double[] distance = new double[pipeline.targetPairs.size()];
-				int i = 0;
-				for (VisionTargetPipeline.TargetPair targetPair : pipeline.targetPairs) {
-					angleToTarget[i] = targetPair.angleToTarget;
-					angleFromPerpendicular[i] = targetPair.angleFromPerpendicular;
-					distance[i] = targetPair.distance;
-					i++;
-				}
-				targetPairs.getEntry("angleToTarget").setDoubleArray(angleToTarget);
-				targetPairs.getEntry("angleFromPerpendicular").setDoubleArray(angleFromPerpendicular);
-				targetPairs.getEntry("distance").setDoubleArray(distance);
-			});
-			visionThread.start();
-		}
+            System.out.println("Its working");
+            VisionThread visionThread = new VisionThread(camera,
+                    new VisionTargetPipeline(camera), pipeline -> {
+                double[] angleToTarget = new double[pipeline.targetPairs.size()];
+                double[] angleFromPerpendicular = new double[pipeline.targetPairs.size()];
+                double[] distance = new double[pipeline.targetPairs.size()];
+                int i = 0;
+                for (VisionTargetPipeline.TargetPair targetPair : pipeline.targetPairs) {
+                    angleToTarget[i] = targetPair.angleToTarget;
+                    angleFromPerpendicular[i] = targetPair.angleFromPerpendicular;
+                    distance[i] = targetPair.distance;
+                    i++;
+                }
+                targetPairs.getEntry("angleToTarget").setDoubleArray(angleToTarget);
+                targetPairs.getEntry("angleFromPerpendicular").setDoubleArray(angleFromPerpendicular);
+                targetPairs.getEntry("distance").setDoubleArray(distance);
+            });
+            visionThread.start();
+        }
 
-		// loop forever
-		for (;;) {
-			try {
-				Thread.sleep(10000);
-			} catch (InterruptedException ex) {
-				return;
-			}
-		}
-	}
+        // loop forever
+        for (; ; ) {
+            try {
+                Thread.sleep(10000);
+            } catch (InterruptedException ex) {
+                return;
+            }
+        }
+    }
 }

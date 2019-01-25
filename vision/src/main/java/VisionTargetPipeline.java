@@ -34,8 +34,8 @@ public class VisionTargetPipeline implements VisionPipeline {
     private Profiler profiler;
 
     // Vision parameters
-    private final Scalar HSL_LOWER_BOUND = new Scalar(66, 122, 34); // BGR
-    private final Scalar HSL_UPPER_BOUND = new Scalar(99, 255, 255); // BGR
+    private final Scalar HSL_LOWER_BOUND = new Scalar(66, 122, 34); // HLS
+    private final Scalar HSL_UPPER_BOUND = new Scalar(99, 255, 255); // HLS
 
     private final double MIN_CONTOUR_AREA = 100;
     private final double MAX_CONTOUR_RATIO = 0.75;
