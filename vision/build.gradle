@@ -36,51 +36,72 @@ dependencies {
 	compile wpi.deps.wpilib()
 }
 
-//wrapper { // This was in the sample build.gradle but it does not seem to work in this context
-    //gradleVersion = '5.0'
-//}
-
 deploy {
     targets {
-		target('rpi') {
-			directory = '/home/pi'
-			failOnMissing = true // Fail with error if cannot connect
-			timeout = 10 // Will search for pi maximum 10 seconds
-			
-			locations {
-				ssh {
-					address = '10.67.18.10' // Change if diffrent hostname or using static IP
-					user = 'pi'                   // The address, username and password are the defaults
-					password = 'raspberry'
-				}
-			}
-		}
-	}
-	
-	artifacts {
-		all {
-			directory = '.'
-			targets << 'rpi'
-			
-			predeploy << { execute '/usr/bin/sudo /bin/mount -o remount,rw / ' }  // Mount filesystem read/write before upload
-			predeploy << { execute '/usr/bin/sudo /bin/mount -o remount,rw /boot ' }
-			postdeploy << { execute '/usr/bin/sudo /bin/mount -o remount,ro / ' } // Mount filesystem read-only after upload
-			postdeploy << { execute '/usr/bin/sudo /bin/mount -o remount,ro /boot ' }
-		}
-		
-		fileArtifact('visionCombinedJar') {
-			file = file("build/libs/${project.name}-all.jar") // Single jar with all dependencies
-			filename = 'uploaded.jar'                         // Rename to upload.jar
-			
-			dependsOn('build') // Build project before deploy
-		}
-		
-		fileArtifact('visionRunCamera') {
-			file = file('runCamera')                              // The default runCamera for uploaded jars
-			
-			postdeploy << { execute '/bin/chmod +x ./runCamera' } // Make executable
-			postdeploy << { execute '/usr/bin/sudo svc -t /service/camera' } // Terminate camera service to restart app
-		}
-		
-	}
+        target('rpi') {
+            directory = '/home/pi'
+            failOnMissing = false // Do not fail with error if cannot connect
+            timeout = 10          // Will search for pi maximum 10 seconds
+
+            locations {
+                ssh {
+                    address = '10.67.18.10'
+                    user = 'pi'                   // The address, username and password are the defaults
+                    password = 'raspberry'
+                }
+            }
+        }
+    }
+
+    artifacts {
+        all {
+            directory = '.'
+            targets << 'rpi'
+        }
+
+        commandArtifact('visionRW') {
+            command = '/usr/bin/sudo /bin/mount -o remount,rw / ' // Mount filesystem read/write before upload
+            dependsOn('deployVisionRWBootRpi')
+        }
+
+        commandArtifact('visionRWBoot') {
+            command = '/usr/bin/sudo /bin/mount -o remount,rw /boot '
+        }
+
+        fileArtifact('visionCombinedJar') {
+            file = file("build/libs/${project.name}-all.jar") // Single jar with all dependencies
+            filename = 'uploaded.jar'
+            // Rename to upload.jar for compatibility with web upload runCamera
+
+            dependsOn('build')                                // Build project before deploy
+            dependsOn('deployVisionRWRpi')
+        }
+
+        fileArtifact('visionRunCamera') {
+            file = file('runCamera')                          // The default runCamera for uploaded jars
+            filename = 'runCamera.tmp'                        // Will be renamed later
+
+            dependsOn('deployVisionCombinedJarRpi')           // Run only after jar file is uploaded
+            dependsOn('deployVisionRWRpi')
+
+            // Prepare runCamera script
+
+            postdeploy << { execute '/usr/bin/sudo /bin/chown 1000:1000 ./runCamera.tmp' }
+            postdeploy << { execute 'tr -d \'\\r\' < "runCamera.tmp" | tee "runCamera"' }
+            // Fix newlines: No Windows carriage returns
+            postdeploy << { execute '/usr/bin/sudo /bin/chown 1000:1000 ./runCamera' }
+            postdeploy << { execute '/usr/bin/sudo /bin/chmod +x ./runCamera' }            // Make executable
+            postdeploy << { execute '/usr/bin/sudo /bin/rm -fdr ./runCamera.tmp' }         // Delete temp file
+
+            // Restart java program
+
+            postdeploy << { execute '/usr/bin/sudo /usr/bin/killall java' }                // Kill existing code
+            postdeploy << { execute '/usr/bin/sudo /usr/bin/killall -9 java' }
+            postdeploy << { execute '/usr/bin/sudo /bin/bash ./runService' }               // Run new code
+
+            postdeploy << { execute '/usr/bin/sudo /bin/mount -o remount,ro / ' }
+            // Mount filesystem readonly for safe shutdown
+            postdeploy << { execute '/usr/bin/sudo /bin/mount -o remount,ro /boot ' }
+        }
+    }
 }

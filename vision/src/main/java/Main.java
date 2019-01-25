@@ -219,7 +219,6 @@ public final class Main {
 		}
 
 		NetworkTable visionRoot = ntinst.getTable("vision");
-		NetworkTable contours = visionRoot.getSubTable("contours");
 		NetworkTable targetPairs = visionRoot.getSubTable("targetPairs");
 
 		// start image processing on camera 0 if present
