@@ -72,6 +72,12 @@ public class DriveTrainSubsystem extends Subsystem {
 
     }
 
+    /**
+     * Basic arcade drive
+     * @param speed In range -1 to 1 in percentage of power
+     * @param zRotation In range to -1 to 1
+     * @param squareInput Square teh speed and zRotation to allow more control at lower speeds
+     */
     public void arcadeDrive(double speed, double zRotation, boolean squareInput) {
         if (squareInput) {
             speed = Math.copySign(speed * speed, speed);
@@ -89,24 +95,70 @@ public class DriveTrainSubsystem extends Subsystem {
         percentageOutput(leftMotorOutput, rightMotorOutput);
     }
 
+    /**
+     * Set the percentage of power to use
+     * @param left In range -1 to 1
+     * @param right In range -1 to 1
+     */
     public void percentageOutput(double left, double right) {
         profileStatus = Status.kNotReady;
+
         leftTalon.set(ControlMode.PercentOutput, left);
         rightTalon.set(ControlMode.PercentOutput, right);
     }
 
+    /**
+     * Stop all motors
+     */
     public void disable() {
         profileStatus = Status.kNotReady;
+
         percentageOutput(0, 0);
     }
 
+    /**
+     * When following a motion profile check the status and keep the trajectory buffers filled
+     */
     @Override
     public void periodic() {
         if (profileStatus == Status.kInProgress) {
-            fillMotionProfileBuffer();
             checkMotionProfileStatus();
+            fillMotionProfileBuffer();
         }
     }
+
+    /**
+     * Sensors
+     */
+
+    public void resetPos() {
+        leftTalon.setSelectedSensorPosition(0);
+        rightTalon.setSelectedSensorPosition(0);
+    }
+
+    public int getLeftPos() {
+        return leftTalon.getSelectedSensorPosition();
+    }
+
+    public int getRightPos() {
+        return rightTalon.getSelectedSensorPosition();
+    }
+
+    /**
+     * Get the velocity of the left side
+     * @return Velocity in raw sensor units per 100ms
+     */
+    public int getLeftVelocity() {
+        return leftTalon.getSelectedSensorVelocity();
+    }
+
+    public int getRightVelocity() {
+        return rightTalon.getSelectedSensorVelocity();
+    }
+
+    /**
+     * Motion Profiling
+     */
 
     private void checkMotionProfileStatus() {
         if (profileStatus == Status.kInProgress) {
@@ -128,6 +180,7 @@ public class DriveTrainSubsystem extends Subsystem {
 
     /**
      * Set a new motion profile
+     * Will reset the sensor positions
      * @param motionProfile The profile to follow
      * @param updatePeriod The time between segments in seconds
      */
@@ -153,6 +206,8 @@ public class DriveTrainSubsystem extends Subsystem {
         motionProfileNotifier.startPeriodic(updatePeriod / 2d);
 
         fillMotionProfileBuffer();
+
+        resetPos();
         profileStatus = Status.kReady;
     }
 
