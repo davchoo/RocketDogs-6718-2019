@@ -12,7 +12,9 @@ import com.ctre.phoenix.motorcontrol.can.VictorSPXConfiguration;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.command.Subsystem;
 import frc.robot.RobotMap;
+import jaci.pathfinder.Pathfinder;
 import jaci.pathfinder.Trajectory;
+import jaci.pathfinder.Waypoint;
 import jaci.pathfinder.modifiers.TankModifier;
 
 public class DriveTrainSubsystem extends Subsystem {
@@ -33,6 +35,8 @@ public class DriveTrainSubsystem extends Subsystem {
 
     public static final double WHEELBASE_WIDTH = 0; //TODO Get wheel base width
     public static final double DRIVETRAIN_LENGTH = 0; //TODO Get drive train length (front to back)
+
+    public static final double WHEEL_DIAMETER = 6; //Inches
 
     public enum Status {
         kNotReady, kReady, kInProgress, kDone
@@ -86,8 +90,9 @@ public class DriveTrainSubsystem extends Subsystem {
 
     /**
      * Basic arcade drive
-     * @param speed In range -1 to 1 in percentage of power
-     * @param zRotation In range to -1 to 1
+     *
+     * @param speed       In range -1 to 1 in percentage of power
+     * @param zRotation   In range to -1 to 1
      * @param squareInput Square teh speed and zRotation to allow more control at lower speeds
      */
     public void arcadeDrive(double speed, double zRotation, boolean squareInput) {
@@ -109,7 +114,8 @@ public class DriveTrainSubsystem extends Subsystem {
 
     /**
      * Set the percentage of power to use
-     * @param left In range -1 to 1
+     *
+     * @param left  In range -1 to 1
      * @param right In range -1 to 1
      */
     public void percentageOutput(double left, double right) {
@@ -148,22 +154,38 @@ public class DriveTrainSubsystem extends Subsystem {
         rightTalon.setSelectedSensorPosition(0);
     }
 
+    /**
+     * Get left encoder pos
+     *
+     * @return Position in raw sensor units
+     */
     public int getLeftPos() {
         return leftTalon.getSelectedSensorPosition();
     }
 
+    /**
+     * Get right encoder pos
+     *
+     * @return Position in raw sensor units
+     */
     public int getRightPos() {
         return rightTalon.getSelectedSensorPosition();
     }
 
     /**
      * Get the velocity of the left side
+     *
      * @return Velocity in raw sensor units per 100ms
      */
     public int getLeftVelocity() {
         return leftTalon.getSelectedSensorVelocity();
     }
 
+    /**
+     * Get the velocity of the right side
+     *
+     * @return Velocity in raw sensor units per 100ms
+     */
     public int getRightVelocity() {
         return rightTalon.getSelectedSensorVelocity();
     }
@@ -193,8 +215,9 @@ public class DriveTrainSubsystem extends Subsystem {
     /**
      * Set a new motion profile
      * Will reset the sensor positions
-     * @param motionProfile The profile to follow
-     * @param updatePeriod The time between segments in seconds
+     *
+     * @param motionProfile The profile to follow in sensor units
+     * @param updatePeriod  The time between segments in seconds
      */
     public void setMotionProfile(TankModifier motionProfile, double updatePeriod) {
         // Disable for safety
@@ -236,6 +259,22 @@ public class DriveTrainSubsystem extends Subsystem {
         return profileStatus;
     }
 
+    public TankModifier generateMotionProfile(Waypoint[] waypoints, double updatePeriod) {
+        Trajectory.Config config = new Trajectory.Config(
+                Trajectory.FitMethod.HERMITE_CUBIC,
+                Trajectory.Config.SAMPLES_FAST,
+                updatePeriod,
+                MAX_SPEED,
+                MAX_ACCEL,
+                MAX_JERK
+        );
+        Trajectory trajectory = Pathfinder.generate(waypoints, config);
+        TankModifier motionProfile = new TankModifier(trajectory);
+        motionProfile.modify(WHEELBASE_WIDTH);
+
+        return motionProfile;
+    }
+
     private void fillMotionProfileBuffer() {
         // Push max points to fill the Talon's buffer
         while (!leftTalon.isMotionProfileTopLevelBufferFull() && !rightTalon.isMotionProfileTopLevelBufferFull()) {
@@ -267,4 +306,37 @@ public class DriveTrainSubsystem extends Subsystem {
         motor.pushMotionProfileTrajectory(point);
     }
 
+    /**
+     * Unit conversion
+     */
+
+    public static double sensorToFeet(double sensor) {
+        //(# rotations) * (circumference) * (in to ft)
+        return (sensor / 4096d) * (Math.PI * WHEEL_DIAMETER) / 12d;
+    }
+
+    public static double feetToSensor(double feet) {
+        //(ft) * (ft to in) / (circumference) * (# rotations to sensor units)
+        return (feet * 12d) / (Math.PI * WHEEL_DIAMETER) * 4096d;
+    }
+
+    public static double sensorToInches(double sensor) {
+        //(# rotations) * (circumference)
+        return (sensor / 4096d) * (Math.PI * WHEEL_DIAMETER);
+    }
+
+    public static double inchesToSensor(double inches) {
+        //(in) / (circumference) * (# rotations to sensor units)
+        return inches / (Math.PI * WHEEL_DIAMETER) * 4096d;
+    }
+
+    public static double sensorToCM(double sensor) {
+        //(# rotations) * (circumference) * (in to cm)
+        return (sensor / 4096d) * (Math.PI * WHEEL_DIAMETER) * 2.54d;
+    }
+
+    public static double cmToSensor(double cm) {
+        //(cm) * (cm to in) / (circumference) * (# rotations to sensor units)
+        return (cm / 2.54d) / (Math.PI * WHEEL_DIAMETER) * 4096d;
+    }
 }
