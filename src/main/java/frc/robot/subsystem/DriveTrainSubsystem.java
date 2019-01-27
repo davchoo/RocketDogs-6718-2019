@@ -4,6 +4,7 @@ import com.ctre.phoenix.motion.MotionProfileStatus;
 import com.ctre.phoenix.motion.TrajectoryPoint;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
+import com.ctre.phoenix.motorcontrol.InvertType;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.TalonSRXConfiguration;
 import com.ctre.phoenix.motorcontrol.can.VictorSPX;
@@ -24,6 +25,14 @@ public class DriveTrainSubsystem extends Subsystem {
     private Status profileStatus = Status.kNotReady;
 
     private Notifier motionProfileNotifier;
+
+    // Motion profile limits
+    public static final double MAX_SPEED = 0; //TODO Get max speed
+    public static final double MAX_ACCEL = 0; //TODO Get max acceleration
+    public static final double MAX_JERK = 0; //TODO Find max jerk
+
+    public static final double WHEELBASE_WIDTH = 0; //TODO Get wheel base width
+    public static final double DRIVETRAIN_LENGTH = 0; //TODO Get drive train length (front to back)
 
     public enum Status {
         kNotReady, kReady, kInProgress, kDone
@@ -57,6 +66,9 @@ public class DriveTrainSubsystem extends Subsystem {
 
         leftVictor.follow(leftTalon);
         rightVictor.follow(rightTalon);
+
+        leftVictor.setInverted(InvertType.FollowMaster);
+        rightVictor.setInverted(InvertType.FollowMaster);
 
         leftMotionProfileStatus = new MotionProfileStatus();
         rightMotionProfileStatus = new MotionProfileStatus();

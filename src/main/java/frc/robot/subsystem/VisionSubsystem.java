@@ -13,8 +13,12 @@ public class VisionSubsystem extends Subsystem {
     private NetworkTableEntry angleFromPerpendicular;
     private NetworkTableEntry distance;
 
+    // Camera offsets from the center of the robot
+    public static final double CAMERA_OFFSET_X = 0; //TODO Find camera offset
+    public static final double CAMERA_OFFSET_Y = 0;
+
     public class Target {
-        double angleToTarget, angleFromPerpendicular, distance;
+        public double angleToTarget, angleFromPerpendicular, distance;
 
         Target(double angleToTarget, double angleFromPerpendicular, double distance) {
             this.angleToTarget = angleToTarget;

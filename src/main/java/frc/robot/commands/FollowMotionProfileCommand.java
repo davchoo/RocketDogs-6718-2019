@@ -6,8 +6,8 @@ import frc.robot.subsystem.DriveTrainSubsystem;
 import jaci.pathfinder.modifiers.TankModifier;
 
 public class FollowMotionProfileCommand extends Command {
-    private TankModifier motionProfile;
-    private double updatePeriod;
+    protected TankModifier motionProfile;
+    protected double updatePeriod;
 
     public FollowMotionProfileCommand(TankModifier motionProfile, double updatePeriod) {
         super("Follow Motion Profile");
