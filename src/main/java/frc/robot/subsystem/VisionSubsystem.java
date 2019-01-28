@@ -44,7 +44,7 @@ public class VisionSubsystem extends Subsystem {
     /**
      * Returns the angle from camera forward to the target
      *
-     * @return The angle in degrees
+     * @return The angle in radians
      */
     public double[] getAngleToTargets() {
         return angleToTarget.getDoubleArray(new double[0]);
@@ -53,7 +53,7 @@ public class VisionSubsystem extends Subsystem {
     /**
      * Returns the angle from target perpendicular to the camera
      *
-     * @return The angle in degrees
+     * @return The angle in radians
      */
     public double[] getAngleFromPerpendicular() {
         return angleFromPerpendicular.getDoubleArray(new double[0]);

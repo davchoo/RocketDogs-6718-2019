@@ -28,7 +28,7 @@ public class GoToTargetCommand extends FollowMotionProfileCommand {
 
             double targetX = target.distance * Math.cos(target.angleToTarget);
             double targetY = target.distance * Math.sin(target.angleToTarget);
-            double targetHeading = Pathfinder.d2r(target.angleToTarget + target.angleFromPerpendicular);
+            double targetHeading = target.angleToTarget + target.angleFromPerpendicular;
 
             //Subtract camera offset to get robot center then add offset to mechanism
             double robotX = 0 - VisionSubsystem.CAMERA_OFFSET_X;

@@ -99,13 +99,13 @@ public class VisionTargetPipeline implements VisionPipeline {
             double x = tvec.get(0, 0)[0];
             double z = tvec.get(2, 0)[0]; // Probably would be much cleaner in python :c
             distance = Math.sqrt(x * x + z * z);
-            angleToTarget = Math.toDegrees(Math.atan2(x, z));
+            angleToTarget = Math.atan2(x, z);
 
             Calib3d.Rodrigues(rvec, rot);
             Core.gemm(rot, tvec, -1, new MatOfDouble(0), 0, pzeroWorld, Core.GEMM_1_T);
             x = pzeroWorld.get(0, 0)[0];
             z = pzeroWorld.get(2, 0)[0];
-            angleFromPerpendicular = Math.toDegrees(Math.atan2(x, z));
+            angleFromPerpendicular = Math.atan2(x, z);
         }
     }
 
