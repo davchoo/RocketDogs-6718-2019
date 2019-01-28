@@ -3,6 +3,7 @@ package frc.robot.commands;
 import frc.robot.Robot;
 import frc.robot.subsystem.DriveTrainSubsystem;
 import frc.robot.subsystem.VisionSubsystem;
+import jaci.pathfinder.Pathfinder;
 import jaci.pathfinder.Waypoint;
 
 public class GoToTargetCommand extends FollowMotionProfileCommand {
@@ -19,24 +20,26 @@ public class GoToTargetCommand extends FollowMotionProfileCommand {
             // Acquire and calculate target properties
             VisionSubsystem.Target target = Robot.visionSubsystem.getCenterTarget();
 
+            if (target == null) {
+                System.out.println("No targets visible");
+                GoToTargetCommand.super.cancel();
+                return;
+            }
+
             double targetX = target.distance * Math.sin(target.angleToTarget);
             double targetY = target.distance * Math.cos(target.angleToTarget);
-            double targetHeading = target.angleToTarget + target.angleFromPerpendicular;
-
-            // Convert cm to sensor units
-            targetX = DriveTrainSubsystem.cmToSensor(targetX);
-            targetY = DriveTrainSubsystem.cmToSensor(targetY);
+            double targetHeading = Pathfinder.d2r(target.angleToTarget + target.angleFromPerpendicular);
 
             //Subtract camera offset to get robot center then add offset to mechanism
             double robotX = 0 - VisionSubsystem.CAMERA_OFFSET_X;
             double robotY = DriveTrainSubsystem.DRIVETRAIN_LENGTH / 2d - VisionSubsystem.CAMERA_OFFSET_Y;
+            double robotHeading = Math.atan2(targetY - robotY, targetX - robotX);
 
             // Convert inches to sensor units
+            targetX = DriveTrainSubsystem.inchesToSensor(targetX);
+            targetY = DriveTrainSubsystem.inchesToSensor(targetY);
             robotX = DriveTrainSubsystem.inchesToSensor(robotX);
             robotY = DriveTrainSubsystem.inchesToSensor(robotY);
-
-            // Calculate current heading now both positions share the same units
-            double robotHeading = Math.atan2(targetY - robotY, targetX - robotX);
 
             // Generate the path
             Waypoint[] waypoints = new Waypoint[]{

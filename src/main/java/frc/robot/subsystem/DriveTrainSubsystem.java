@@ -29,14 +29,16 @@ public class DriveTrainSubsystem extends Subsystem {
     private Notifier motionProfileNotifier;
 
     // Motion profile limits
+    // In raw sensor units
     public static final double MAX_SPEED = 0; //TODO Get max speed
     public static final double MAX_ACCEL = 0; //TODO Get max acceleration
     public static final double MAX_JERK = 0; //TODO Find max jerk
 
+    // In inches
     public static final double WHEELBASE_WIDTH = 0; //TODO Get wheel base width
     public static final double DRIVETRAIN_LENGTH = 0; //TODO Get drive train length (front to back)
 
-    public static final double WHEEL_DIAMETER = 6; //Inches
+    public static final double WHEEL_DIAMETER = 6;
 
     public enum Status {
         kNotReady, kReady, kInProgress, kDone
@@ -259,6 +261,13 @@ public class DriveTrainSubsystem extends Subsystem {
         return profileStatus;
     }
 
+    /**
+     * Takes waypoints in raw sensor units and radians and returns
+     * a motion profile
+     * @param waypoints In raw sensor units and radians
+     * @param updatePeriod The duration of each segment in seconds
+     * @return A motion profile in raw sensor units
+     */
     public TankModifier generateMotionProfile(Waypoint[] waypoints, double updatePeriod) {
         Trajectory.Config config = new Trajectory.Config(
                 Trajectory.FitMethod.HERMITE_CUBIC,
@@ -270,7 +279,9 @@ public class DriveTrainSubsystem extends Subsystem {
         );
         Trajectory trajectory = Pathfinder.generate(waypoints, config);
         TankModifier motionProfile = new TankModifier(trajectory);
-        motionProfile.modify(WHEELBASE_WIDTH);
+        // Using sensor units doesn't really make sense in this context
+        // Probably want to convert everything to inches
+        motionProfile.modify(inchesToSensor(WHEELBASE_WIDTH));
 
         return motionProfile;
     }
@@ -328,15 +339,5 @@ public class DriveTrainSubsystem extends Subsystem {
     public static double inchesToSensor(double inches) {
         //(in) / (circumference) * (# rotations to sensor units)
         return inches / (Math.PI * WHEEL_DIAMETER) * 4096d;
-    }
-
-    public static double sensorToCM(double sensor) {
-        //(# rotations) * (circumference) * (in to cm)
-        return (sensor / 4096d) * (Math.PI * WHEEL_DIAMETER) * 2.54d;
-    }
-
-    public static double cmToSensor(double cm) {
-        //(cm) * (cm to in) / (circumference) * (# rotations to sensor units)
-        return (cm / 2.54d) / (Math.PI * WHEEL_DIAMETER) * 4096d;
     }
 }
