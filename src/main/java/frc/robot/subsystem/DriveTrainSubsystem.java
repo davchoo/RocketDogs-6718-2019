@@ -30,18 +30,24 @@ public class DriveTrainSubsystem extends Subsystem {
 
     // Motion profile limits
     // In raw sensor units
-    public static final double MAX_SPEED = 0; //TODO Get max speed
-    public static final double MAX_ACCEL = 0; //TODO Get max acceleration
-    public static final double MAX_JERK = 0; //TODO Find max jerk
+    public static final double MAX_SPEED = 3080.0; // per 100ms
+    public static final double MAX_ACCEL = 120.0; //TODO Get max acceleration
+    public static final double MAX_JERK = 120.0; //TODO Find max jerk
 
     // In inches
-    public static final double WHEELBASE_WIDTH = 0; //TODO Get wheel base width
+    public static final double WHEELBASE_WIDTH = 22.75;
     public static final double DRIVETRAIN_LENGTH = 0; //TODO Get drive train length (front to back)
 
     public static final double WHEEL_DIAMETER = 6;
 
     public enum Status {
-        kNotReady, kReady, kInProgress, kDone
+        kNotReady(0), kReady(1), kInProgress(1), kDone(2);
+        
+        public final int motionProfileSetValue;
+        
+        Status(int motionProfileSetValue) {
+            this.motionProfileSetValue = motionProfileSetValue;
+        }
     }
 
     public DriveTrainSubsystem() {
@@ -55,17 +61,20 @@ public class DriveTrainSubsystem extends Subsystem {
         TalonSRXConfiguration talonConfig = new TalonSRXConfiguration();
         VictorSPXConfiguration victorConfig = new VictorSPXConfiguration();
 
+        talonConfig.slot0.kF = 1023.0 / MAX_SPEED;
+        talonConfig.slot0.kP = 0;
+        talonConfig.primaryPID.selectedFeedbackSensor = FeedbackDevice.CTRE_MagEncoder_Relative;
+        talonConfig.motionCruiseVelocity = (int) (MAX_SPEED * 0.6);
+        talonConfig.motionAcceleration = (int) MAX_ACCEL;
+
         leftTalon.configAllSettings(talonConfig);
         rightTalon.configAllSettings(talonConfig);
 
-        leftTalon.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative);
-        rightTalon.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative);
-
-        leftTalon.setSensorPhase(false);
-        rightTalon.setSensorPhase(false);
+        leftTalon.setSensorPhase(true);
+        rightTalon.setSensorPhase(true);
 
         leftTalon.setInverted(false);
-        rightTalon.setInverted(false);
+        rightTalon.setInverted(true);
 
         leftVictor.configAllSettings(victorConfig);
         rightVictor.configAllSettings(victorConfig);
@@ -83,13 +92,22 @@ public class DriveTrainSubsystem extends Subsystem {
             leftTalon.processMotionProfileBuffer();
             rightTalon.processMotionProfileBuffer();
         });
+
+        leftTalon.selectProfileSlot(0, 0);
+        rightTalon.selectProfileSlot(0, 0);
+
+        disable();
     }
 
     @Override
     protected void initDefaultCommand() {
 
     }
-
+    
+    private double applyDeadBand(double value, double deadBand) {
+        return Math.abs(value) < deadBand ? 0 : value;
+    }
+    
     /**
      * Basic arcade drive
      *
@@ -98,6 +116,9 @@ public class DriveTrainSubsystem extends Subsystem {
      * @param squareInput Square teh speed and zRotation to allow more control at lower speeds
      */
     public void arcadeDrive(double speed, double zRotation, boolean squareInput) {
+        speed = applyDeadBand(speed, 0.15);
+        zRotation = applyDeadBand(zRotation, 0.1);
+        
         if (squareInput) {
             speed = Math.copySign(speed * speed, speed);
             zRotation = Math.copySign(zRotation * zRotation, zRotation);
@@ -107,10 +128,11 @@ public class DriveTrainSubsystem extends Subsystem {
         double rightMotorOutput = speed - zRotation;
 
         double max = Math.max(Math.abs(leftMotorOutput), Math.abs(rightMotorOutput));
-
-        leftMotorOutput /= max;
-        rightMotorOutput /= max;
-
+        if (Math.abs(max) > 1) {
+            leftMotorOutput /= max;
+            rightMotorOutput /= max;
+        }
+        
         percentageOutput(leftMotorOutput, rightMotorOutput);
     }
 
@@ -248,13 +270,12 @@ public class DriveTrainSubsystem extends Subsystem {
         profileStatus = Status.kReady;
     }
 
-    public void startMotionProfile() {
+    public void followMotionProfile() {
         if (profileStatus == Status.kReady) {
-            leftTalon.set(ControlMode.MotionProfile, 0);
-            rightTalon.set(ControlMode.MotionProfile, 0);
-
             profileStatus = Status.kInProgress;
         }
+        leftTalon.set(ControlMode.MotionProfile, profileStatus.motionProfileSetValue);
+        rightTalon.set(ControlMode.MotionProfile, profileStatus.motionProfileSetValue);
     }
 
     public Status getProfileStatus() {
@@ -287,16 +308,14 @@ public class DriveTrainSubsystem extends Subsystem {
     }
 
     private void fillMotionProfileBuffer() {
-        // Push max points to fill the Talon's buffer
-        while (!leftTalon.isMotionProfileTopLevelBufferFull() && !rightTalon.isMotionProfileTopLevelBufferFull()) {
+        // Push max points to fill the Talon's buffer and till we run out of points
+        while (!leftTalon.isMotionProfileTopLevelBufferFull() && !rightTalon.isMotionProfileTopLevelBufferFull() &&
+                currentSegment != totalSegments) {
             pushNextSegment();
         }
     }
 
     private void pushNextSegment() {
-        if (leftVictor.isMotionProfileTopLevelBufferFull() || rightTalon.isMotionProfileTopLevelBufferFull()) {
-            return;
-        }
         if (currentSegment == totalSegments) return;
         if (leftMotionProfile == null || rightMotionProfile == null) return;
         TrajectoryPoint point = new TrajectoryPoint();
@@ -315,6 +334,17 @@ public class DriveTrainSubsystem extends Subsystem {
         point.isLastPoint = (currentSegment + 1) == totalSegments;
 
         motor.pushMotionProfileTrajectory(point);
+    }
+
+    /**
+     * Motion magic
+     */
+
+    public void gotoPos(double leftPos, double rightPos) {
+        profileStatus = Status.kNotReady;
+
+        leftTalon.set(ControlMode.MotionMagic, leftPos);
+        rightTalon.set(ControlMode.MotionMagic, rightPos);
     }
 
     /**

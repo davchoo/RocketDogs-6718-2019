@@ -20,7 +20,11 @@ public class FollowMotionProfileCommand extends Command {
     @Override
     protected void initialize() {
         Robot.driveTrainSubsystem.setMotionProfile(motionProfile, updatePeriod);
-        Robot.driveTrainSubsystem.startMotionProfile();
+    }
+
+    @Override
+    protected void execute() {
+        Robot.driveTrainSubsystem.followMotionProfile();
     }
 
     @Override
