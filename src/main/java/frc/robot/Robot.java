@@ -34,9 +34,9 @@ public class Robot extends TimedRobot {
      */
     @Override
     public void robotInit() {
-        Robot.oi = new OI();
         Robot.driveTrainSubsystem = new DriveTrainSubsystem();
         Robot.visionSubsystem = new VisionSubsystem();
+        Robot.oi = new OI();
 
         m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
         m_chooser.addOption("My Auto", kCustomAuto);

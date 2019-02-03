@@ -18,7 +18,7 @@ import jaci.pathfinder.Waypoint;
 import jaci.pathfinder.modifiers.TankModifier;
 
 public class DriveTrainSubsystem extends Subsystem {
-    private TalonSRX leftTalon, rightTalon;
+    public TalonSRX leftTalon, rightTalon;
     private VictorSPX leftVictor, rightVictor;
 
     private int currentSegment, totalSegments;
@@ -30,8 +30,8 @@ public class DriveTrainSubsystem extends Subsystem {
 
     // Motion profile limits
     // In raw sensor units
-    public static final double MAX_SPEED = 3080.0; // per 100ms
-    public static final double MAX_ACCEL = 120.0; //TODO Get max acceleration
+    public static final double MAX_SPEED = 3003.3; // per 100ms
+    public static final double MAX_ACCEL = 400.0; //TODO Get max acceleration
     public static final double MAX_JERK = 120.0; //TODO Find max jerk
 
     // In inches
@@ -62,7 +62,7 @@ public class DriveTrainSubsystem extends Subsystem {
         VictorSPXConfiguration victorConfig = new VictorSPXConfiguration();
 
         talonConfig.slot0.kF = 1023.0 / MAX_SPEED;
-        talonConfig.slot0.kP = 0;
+        talonConfig.slot0.kP = (0.8 * 1023.0) / 1400;
         talonConfig.primaryPID.selectedFeedbackSensor = FeedbackDevice.CTRE_MagEncoder_Relative;
         talonConfig.motionCruiseVelocity = (int) (MAX_SPEED * 0.6);
         talonConfig.motionAcceleration = (int) MAX_ACCEL;
@@ -73,8 +73,8 @@ public class DriveTrainSubsystem extends Subsystem {
         leftTalon.setSensorPhase(true);
         rightTalon.setSensorPhase(true);
 
-        leftTalon.setInverted(false);
-        rightTalon.setInverted(true);
+        leftTalon.setInverted(true);
+        rightTalon.setInverted(false);
 
         leftVictor.configAllSettings(victorConfig);
         rightVictor.configAllSettings(victorConfig);
@@ -124,8 +124,8 @@ public class DriveTrainSubsystem extends Subsystem {
             zRotation = Math.copySign(zRotation * zRotation, zRotation);
         }
 
-        double leftMotorOutput = speed + zRotation;
-        double rightMotorOutput = speed - zRotation;
+        double leftMotorOutput = speed - zRotation;
+        double rightMotorOutput = speed + zRotation;
 
         double max = Math.max(Math.abs(leftMotorOutput), Math.abs(rightMotorOutput));
         if (Math.abs(max) > 1) {
@@ -212,6 +212,26 @@ public class DriveTrainSubsystem extends Subsystem {
      */
     public int getRightVelocity() {
         return rightTalon.getSelectedSensorVelocity();
+    }
+
+    /**
+     * Get the close loop error of PID 0 on the
+     * left side
+     *
+     * @return The close loop error in raw sensor units
+     */
+    public int getLeftCloseLoopError() {
+        return leftTalon.getClosedLoopError();
+    }
+
+    /**
+     * Get the close loop error of PID 0 on the
+     * right side
+     *
+     * @return The close loop error in raw sensor units
+     */
+    public int getRightCloseLoopError() {
+        return rightTalon.getClosedLoopError();
     }
 
     /**
