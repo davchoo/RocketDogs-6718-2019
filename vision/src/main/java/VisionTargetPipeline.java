@@ -111,8 +111,7 @@ public class VisionTargetPipeline implements VisionPipeline {
 
     public VisionTargetPipeline(VideoSource source) {
         cameraMatrix = new Mat(3, 3, CvType.CV_32F);
-        //1.3586586245483457e+02, 8.5375394365975524e+01
-        cameraMatrix.put(0, 0, 338.94958622337884,0., 160, 0., 338.94958622337884, 88, 0., 0., 1.);
+        cameraMatrix.put(0, 0, 1.3586586245483457e+02,0., 160, 0., 338.94958622337884, 8.5375394365975524e+0, 0., 0., 1.);
         distCoeffs = new MatOfDouble(0., 1.3115966339993879, 0., 0., -4.389076081209448);
         VideoMode mode = source.getVideoMode();
         int width = mode.width;

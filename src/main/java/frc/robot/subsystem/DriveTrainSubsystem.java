@@ -27,7 +27,6 @@ public class DriveTrainSubsystem extends Subsystem {
     private Status profileStatus = Status.kNotReady;
 
     private Notifier motionProfileNotifier;
-
     // Motion profile limits
     // In raw sensor units
     public static final double MAX_SPEED = 2820.0;
@@ -261,7 +260,7 @@ public class DriveTrainSubsystem extends Subsystem {
      * Set a new motion profile
      * Will reset the sensor positions
      *
-     * @param motionProfile The profile to follow in sensor units
+     * @param motionProfile The profile to follow in inches
      * @param updatePeriod  The time between segments in seconds
      */
     public void setMotionProfile(TankModifier motionProfile, double updatePeriod) {
@@ -281,7 +280,7 @@ public class DriveTrainSubsystem extends Subsystem {
         totalSegments = leftMotionProfile.length();
 
         // Set update period to twice the segment period
-        leftTalon.changeMotionControlFramePeriod((int) (updatePeriod * 1000d / 2d));
+        leftTalon.changeMotionControlFramePeriod((int) (updatePeriod * 1000d / 2d)); // Convert seconds to ms
         rightTalon.changeMotionControlFramePeriod((int) (updatePeriod * 1000d / 2d));
         motionProfileNotifier.startPeriodic(updatePeriod / 2d);
 
@@ -304,26 +303,24 @@ public class DriveTrainSubsystem extends Subsystem {
     }
 
     /**
-     * Takes waypoints in raw sensor units and radians and returns
+     * Takes waypoints in inches and radians and returns
      * a motion profile
-     * @param waypoints In raw sensor units and radians
+     * @param waypoints In inches and radians
      * @param updatePeriod The duration of each segment in seconds
-     * @return A motion profile in raw sensor units
+     * @return A motion profile in inches
      */
     public TankModifier generateMotionProfile(Waypoint[] waypoints, double updatePeriod) {
         Trajectory.Config config = new Trajectory.Config(
                 Trajectory.FitMethod.HERMITE_CUBIC,
                 Trajectory.Config.SAMPLES_FAST,
                 updatePeriod,
-                MAX_SPEED,
-                MAX_ACCEL,
-                MAX_JERK
+                sensorToInches(MAX_SPEED / 0.1),
+                sensorToInches(MAX_ACCEL / 0.1),
+                sensorToInches(MAX_JERK / 0.1)
         );
         Trajectory trajectory = Pathfinder.generate(waypoints, config);
         TankModifier motionProfile = new TankModifier(trajectory);
-        // Using sensor units doesn't really make sense in this context
-        // Probably want to convert everything to inches
-        motionProfile.modify(inchesToSensor(WHEELBASE_WIDTH));
+        motionProfile.modify(WHEELBASE_WIDTH);
 
         return motionProfile;
     }
@@ -350,8 +347,9 @@ public class DriveTrainSubsystem extends Subsystem {
     }
 
     private void pushSideSegment(TrajectoryPoint point, Trajectory.Segment segment, TalonSRX motor) {
-        point.position = segment.position;
-        point.velocity = segment.velocity;
+        point.position = inchesToSensor(segment.position);
+        point.velocity = inchesToSensor(segment.velocity) * 0.1; // Talon expects velocity in sensor units per 100ms
+        point.zeroPos = currentSegment == 0;
         point.isLastPoint = (currentSegment + 1) == totalSegments;
 
         motor.pushMotionProfileTrajectory(point);

@@ -7,15 +7,13 @@ import frc.robot.commands.*;
 public class OI {
     // May want to assign joystick based on type
     public Joystick driveJoystick = new Joystick(0);
-    public JoystickButton testMotionMagic = new JoystickButton(driveJoystick, 5);
-    public JoystickButton testTurning = new JoystickButton(driveJoystick, 2);
     public JoystickButton operatorControl = new JoystickButton(driveJoystick, 3);
+    public JoystickButton faceTarget = new JoystickButton(driveJoystick, 5);
     public JoystickButton gotoTarget = new JoystickButton(driveJoystick, 6);
 
     public OI() {
-        testMotionMagic.whenPressed(new MoveToPositionCommand(4096, 4096, true));
-        testTurning.whenPressed(new TurnRelativeCommand(90));
         operatorControl.whenPressed(new OIDriverCommand());
+        faceTarget.whenPressed(new FaceTargetCommand());
         gotoTarget.whenPressed(new GoToTargetCommand());
     }
 }
