@@ -19,7 +19,7 @@ public class VisionSubsystem extends Subsystem {
     public static final double CAMERA_OFFSET_Y = 0;
 
     public class Target {
-        // In degrees and inches
+        // In radians and inches
         public double angleToTarget, angleFromPerpendicular, distance;
 
         Target(double angleToTarget, double angleFromPerpendicular, double distance) {
