@@ -26,14 +26,10 @@ public class MoveToPositionCommand extends Command {
     @Override
     protected void execute() {
         Robot.driveTrainSubsystem.gotoPos(leftPosition, rightPosition);
-        if (Robot.oi.driveJoystick.getTrigger()) {
-            System.out.println("Current Pos: " + Robot.driveTrainSubsystem.getLeftPos() + " " + Robot.driveTrainSubsystem.getRightPos());
-            System.out.println("Loop error" + Robot.driveTrainSubsystem.getLeftCloseLoopError() + " " + Robot.driveTrainSubsystem.getRightCloseLoopError());
-        }
     }
 
     @Override
     protected boolean isFinished() {
-        return Math.abs(Robot.driveTrainSubsystem.getLeftPos() - leftPosition) < 100;
+        return Math.abs(Robot.driveTrainSubsystem.getLeftPos() - leftPosition) < 20;
     }
 }

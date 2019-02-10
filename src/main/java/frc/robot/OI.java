@@ -13,7 +13,7 @@ public class OI {
     public JoystickButton gotoTarget = new JoystickButton(driveJoystick, 6);
 
     public OI() {
-        testMotionMagic.whenPressed(new MoveToPositionCommand(4096 * 32, 4096 * 32, true));
+        testMotionMagic.whenPressed(new MoveToPositionCommand(4096, 4096, true));
         testTurning.whenPressed(new TurnRelativeCommand(90));
         operatorControl.whenPressed(new OIDriverCommand());
         gotoTarget.whenPressed(new GoToTargetCommand());

@@ -30,9 +30,9 @@ public class DriveTrainSubsystem extends Subsystem {
 
     // Motion profile limits
     // In raw sensor units
-    public static final double MAX_SPEED = 3003.3; // per 100ms
-    public static final double MAX_ACCEL = 400.0; //TODO Get max acceleration
-    public static final double MAX_JERK = 120.0; //TODO Find max jerk
+    public static final double MAX_SPEED = 2820.0;
+    public static final double MAX_ACCEL = 2000.0;
+    public static final double MAX_JERK = 1000.0;
 
     // In inches
     public static final double WHEELBASE_WIDTH = 22.75;
@@ -61,10 +61,10 @@ public class DriveTrainSubsystem extends Subsystem {
         TalonSRXConfiguration talonConfig = new TalonSRXConfiguration();
         VictorSPXConfiguration victorConfig = new VictorSPXConfiguration();
 
-        talonConfig.slot0.kF = 1023.0 / MAX_SPEED;
-        talonConfig.slot0.kP = (0.8 * 1023.0) / 1400;
+        talonConfig.slot0.kP = 4;
+        talonConfig.slot0.kF = 0.398750067; //At 12.42 volts
         talonConfig.primaryPID.selectedFeedbackSensor = FeedbackDevice.CTRE_MagEncoder_Relative;
-        talonConfig.motionCruiseVelocity = (int) (MAX_SPEED * 0.6);
+        talonConfig.motionCruiseVelocity = (int) MAX_SPEED;
         talonConfig.motionAcceleration = (int) MAX_ACCEL;
 
         leftTalon.configAllSettings(talonConfig);
@@ -96,6 +96,7 @@ public class DriveTrainSubsystem extends Subsystem {
         leftTalon.selectProfileSlot(0, 0);
         rightTalon.selectProfileSlot(0, 0);
 
+        resetPos();
         disable();
     }
 
