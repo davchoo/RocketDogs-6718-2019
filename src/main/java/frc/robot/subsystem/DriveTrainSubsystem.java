@@ -18,7 +18,7 @@ import jaci.pathfinder.Waypoint;
 import jaci.pathfinder.modifiers.TankModifier;
 
 public class DriveTrainSubsystem extends Subsystem {
-    public TalonSRX leftTalon, rightTalon;
+    private TalonSRX leftTalon, rightTalon;
     private VictorSPX leftVictor, rightVictor;
 
     private int currentSegment, totalSegments;
@@ -73,8 +73,8 @@ public class DriveTrainSubsystem extends Subsystem {
         leftTalon.setSensorPhase(true);
         rightTalon.setSensorPhase(true);
 
-        leftTalon.setInverted(true);
-        rightTalon.setInverted(false);
+        leftTalon.setInverted(false);
+        rightTalon.setInverted(true);
 
         leftVictor.configAllSettings(victorConfig);
         rightVictor.configAllSettings(victorConfig);
@@ -124,8 +124,8 @@ public class DriveTrainSubsystem extends Subsystem {
             zRotation = Math.copySign(zRotation * zRotation, zRotation);
         }
 
-        double leftMotorOutput = speed - zRotation;
-        double rightMotorOutput = speed + zRotation;
+        double leftMotorOutput = speed + zRotation;
+        double rightMotorOutput = speed - zRotation;
 
         double max = Math.max(Math.abs(leftMotorOutput), Math.abs(rightMotorOutput));
         if (Math.abs(max) > 1) {
