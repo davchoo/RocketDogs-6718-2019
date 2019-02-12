@@ -34,8 +34,8 @@ public class VisionTargetPipeline implements VisionPipeline {
     private Profiler profiler;
 
     // Vision parameters
-    private final Scalar HSL_LOWER_BOUND = new Scalar(66, 122, 34); // HLS
-    private final Scalar HSL_UPPER_BOUND = new Scalar(99, 255, 255); // HLS
+    private final Scalar HSL_LOWER_BOUND = new Scalar(80, 30, 0); // HLS
+    private final Scalar HSL_UPPER_BOUND = new Scalar(90, 255, 255); // HLS
 
     private final double MIN_CONTOUR_AREA = 100;
     private final double MAX_CONTOUR_RATIO = 0.75;
@@ -111,7 +111,7 @@ public class VisionTargetPipeline implements VisionPipeline {
 
     public VisionTargetPipeline(VideoSource source) {
         cameraMatrix = new Mat(3, 3, CvType.CV_32F);
-        cameraMatrix.put(0, 0, 1.3586586245483457e+02,0., 160, 0., 338.94958622337884, 8.5375394365975524e+0, 0., 0., 1.);
+        cameraMatrix.put(0, 0, 338.94958622337884, 0., 1.3586586245483457e+02, 0., 338.94958622337884, 8.5375394365975524e+01, 0., 0., 1.);
         distCoeffs = new MatOfDouble(0., 1.3115966339993879, 0., 0., -4.389076081209448);
         VideoMode mode = source.getVideoMode();
         int width = mode.width;

@@ -225,10 +225,15 @@ public final class Main {
             VideoSource camera = cameras.get(0);
             VideoProperty gain = camera.getProperty("gain");
             VideoProperty exposureAbsolute = camera.getProperty("exposure_absolute");
-            gain.set(30);
+            VideoProperty brightness = camera.getProperty("brightness");
+
+            gain.set(10);
             exposureAbsolute.set(0);
-            gain.set(33);
-            exposureAbsolute.set(4);
+            brightness.set(45);
+
+            gain.set(4);
+            exposureAbsolute.set(1);
+            brightness.set(40);
 
             System.out.println("Its working");
             VisionThread visionThread = new VisionThread(camera,
@@ -246,6 +251,7 @@ public final class Main {
                 targetPairs.getEntry("angleToTarget").setDoubleArray(angleToTarget);
                 targetPairs.getEntry("angleFromPerpendicular").setDoubleArray(angleFromPerpendicular);
                 targetPairs.getEntry("distance").setDoubleArray(distance);
+                ntinst.flush();
             });
             visionThread.start();
         }
