@@ -8,4 +8,7 @@ public class RobotMap {
     //Victor SPX Ids
     public static final int LEFT_VICTOR_ID = 1;
     public static final int RIGHT_VICTOR_ID = 0;
+
+    //Spark PWM Ids
+    public static final int CLAW_ID = 8;
 }

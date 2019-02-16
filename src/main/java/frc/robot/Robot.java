@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.command.Scheduler;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.commands.OIDriverCommand;
+import frc.robot.subsystem.ClawSubsystem;
 import frc.robot.subsystem.DriveTrainSubsystem;
 import frc.robot.subsystem.VisionSubsystem;
 
@@ -24,9 +25,9 @@ public class Robot extends TimedRobot {
 
     public static OI oi;
 
+    public static ClawSubsystem clawSubsystem;
     public static DriveTrainSubsystem driveTrainSubsystem;
     public static VisionSubsystem visionSubsystem;
-
 
     /**
      * This function is run when the robot is first started up and should be
@@ -34,6 +35,7 @@ public class Robot extends TimedRobot {
      */
     @Override
     public void robotInit() {
+        Robot.clawSubsystem = new ClawSubsystem();
         Robot.driveTrainSubsystem = new DriveTrainSubsystem();
         Robot.visionSubsystem = new VisionSubsystem();
         Robot.oi = new OI();
