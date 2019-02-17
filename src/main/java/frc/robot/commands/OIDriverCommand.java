@@ -28,10 +28,17 @@ public class OIDriverCommand extends Command {
         }
         Robot.driveTrainSubsystem.arcadeDrive(speed, zRot, true);
 
-        double clawSpeed = Robot.oi.controller.getTriggerAxis(GenericHID.Hand.kLeft) - Robot.oi.controller.getTriggerAxis(GenericHID.Hand.kRight);
-        clawSpeed *= 0.5;
-        System.out.println(String.format("Speed: %f ZRot: %f Claw Speed: %f%n", speed, zRot, clawSpeed));
+        double clawSpeed = Robot.oi.controller.getX(GenericHID.Hand.kLeft);//Robot.oi.controller.getTriggerAxis(GenericHID.Hand.kLeft) - Robot.oi.controller.getTriggerAxis(GenericHID.Hand.kRight);
+        clawSpeed *= 0.3;
+        if (Robot.oi.controller.getBumper(GenericHID.Hand.kRight)) {
+            clawSpeed = -0.5;
+        }
         Robot.clawSubsystem.set(clawSpeed);
+
+        double rampSpeed = Robot.oi.controller.getY(GenericHID.Hand.kLeft);
+        Robot.rampSubsystem.set(rampSpeed);
+
+        System.out.println(String.format("Speed: %f ZRot: %f Claw Speed: %f Ramp Speed: %f %n", speed, zRot, clawSpeed, rampSpeed));
     }
 
     @Override

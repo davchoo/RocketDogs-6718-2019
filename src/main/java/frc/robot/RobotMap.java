@@ -10,5 +10,6 @@ public class RobotMap {
     public static final int RIGHT_VICTOR_ID = 0;
 
     //Spark PWM Ids
-    public static final int CLAW_ID = 8;
+    public static final int CLAW_ID = 9;
+    public static final int RAMP_ID = 8;
 }

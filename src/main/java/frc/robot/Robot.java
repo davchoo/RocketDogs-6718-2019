@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.commands.OIDriverCommand;
 import frc.robot.subsystem.ClawSubsystem;
 import frc.robot.subsystem.DriveTrainSubsystem;
+import frc.robot.subsystem.RampSubsystem;
 import frc.robot.subsystem.VisionSubsystem;
 
 public class Robot extends TimedRobot {
@@ -27,6 +28,7 @@ public class Robot extends TimedRobot {
 
     public static ClawSubsystem clawSubsystem;
     public static DriveTrainSubsystem driveTrainSubsystem;
+    public static RampSubsystem rampSubsystem;
     public static VisionSubsystem visionSubsystem;
 
     /**
@@ -37,6 +39,7 @@ public class Robot extends TimedRobot {
     public void robotInit() {
         Robot.clawSubsystem = new ClawSubsystem();
         Robot.driveTrainSubsystem = new DriveTrainSubsystem();
+        Robot.rampSubsystem = new RampSubsystem();
         Robot.visionSubsystem = new VisionSubsystem();
         Robot.oi = new OI();
 
