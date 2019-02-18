@@ -13,6 +13,10 @@ public class RampSubsystem extends Subsystem {
         rampMotor = new Spark(RAMP_ID);
     }
 
+    public void disable() {
+        set(0);
+    }
+
     public void set(double value) {
         rampMotor.set(value);
     }
