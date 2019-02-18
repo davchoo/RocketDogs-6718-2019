@@ -2,6 +2,7 @@ package frc.robot.subsystem;
 
 import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.command.Subsystem;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 
 import static frc.robot.RobotMap.CLAW_ID;
 
@@ -13,6 +14,8 @@ public class ClawSubsystem extends Subsystem {
     public ClawSubsystem() {
         super("Claw");
         clawMotor = new Spark(CLAW_ID);
+
+        Shuffleboard.getTab("Dashboard").add("Claw Motor", clawMotor);
     }
 
     public void disable() {

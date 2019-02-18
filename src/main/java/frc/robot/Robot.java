@@ -13,10 +13,7 @@ import edu.wpi.first.wpilibj.command.Scheduler;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.commands.OIDriverCommand;
-import frc.robot.subsystem.ClawSubsystem;
-import frc.robot.subsystem.DriveTrainSubsystem;
-import frc.robot.subsystem.RampSubsystem;
-import frc.robot.subsystem.VisionSubsystem;
+import frc.robot.subsystem.*;
 
 public class Robot extends TimedRobot {
     private static final String kDefaultAuto = "Default";
@@ -28,6 +25,7 @@ public class Robot extends TimedRobot {
 
     public static ClawSubsystem clawSubsystem;
     public static DriveTrainSubsystem driveTrainSubsystem;
+    public static PowerSubsystem powerSubsystem;
     public static RampSubsystem rampSubsystem;
     public static VisionSubsystem visionSubsystem;
 
@@ -39,6 +37,7 @@ public class Robot extends TimedRobot {
     public void robotInit() {
         Robot.clawSubsystem = new ClawSubsystem();
         Robot.driveTrainSubsystem = new DriveTrainSubsystem();
+        Robot.powerSubsystem = new PowerSubsystem();
         Robot.rampSubsystem = new RampSubsystem();
         Robot.visionSubsystem = new VisionSubsystem();
         Robot.oi = new OI();
