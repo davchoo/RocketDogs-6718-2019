@@ -4,7 +4,7 @@ import frc.robot.Robot;
 import frc.robot.subsystem.DriveTrainSubsystem;
 
 public class TurnRelativeCommand extends MoveToPositionCommand {
-    protected double degrees;
+    private double degrees;
 
     public TurnRelativeCommand(double degrees) {
         super(0, 0, true);
@@ -17,7 +17,10 @@ public class TurnRelativeCommand extends MoveToPositionCommand {
         this.degrees = degrees;
 
         double pos = DriveTrainSubsystem.inchesToSensor(Math.PI * DriveTrainSubsystem.WHEELBASE_WIDTH / 360.0 * degrees);
-        leftPosition = pos;
-        rightPosition = -pos;
+        setPosition(pos, -pos, true);
+    }
+
+    public double getDegrees() {
+        return degrees;
     }
 }

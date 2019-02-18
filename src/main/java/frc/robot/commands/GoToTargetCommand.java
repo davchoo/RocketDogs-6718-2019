@@ -4,9 +4,13 @@ import frc.robot.Robot;
 import frc.robot.subsystem.VisionSubsystem;
 import jaci.pathfinder.Waypoint;
 
+import java.util.logging.Logger;
+
 public class GoToTargetCommand extends FollowMotionProfileCommand {
     public static final double UPDATE_PERIOD = 0.1;
     private Thread motionProfileThread;
+
+    private static final Logger LOGGER = Logger.getLogger(GoToTargetCommand.class.getName());
 
     public GoToTargetCommand() {
         super(null, UPDATE_PERIOD);
@@ -15,9 +19,11 @@ public class GoToTargetCommand extends FollowMotionProfileCommand {
 
     @Override
     protected void initialize() {
-        // Probably most unsafe code ever
-        // Don't spam this command or there
-        // would be many threads calculating paths :/
+        if (!motionProfileThread.isAlive()) {
+            LOGGER.warning("Last motion profile thread is still calculating!");
+            super.cancel();
+            return;
+        }
         motionProfileThread = new Thread(() -> {
             // Acquire and calculate target properties
             VisionSubsystem.Target target = Robot.visionSubsystem.getCenterTarget();
@@ -38,10 +44,12 @@ public class GoToTargetCommand extends FollowMotionProfileCommand {
                     new Waypoint(targetX, targetY, targetHeading)
             };
 
-            motionProfile = Robot.driveTrainSubsystem.generateMotionProfile(waypoints, UPDATE_PERIOD);
+            setMotionProfile(Robot.driveTrainSubsystem.generateMotionProfile(waypoints, UPDATE_PERIOD), UPDATE_PERIOD);
 
-            // Run the motion profile
-            GoToTargetCommand.super.initialize();
+            if (!super.isCanceled()) {
+                // Run the motion profile
+                GoToTargetCommand.super.initialize(); //Calls FollowMotionProfileCommand's initialize
+            }
         });
         motionProfileThread.start();
     }

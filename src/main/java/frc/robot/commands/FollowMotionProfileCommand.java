@@ -6,15 +6,14 @@ import frc.robot.subsystem.DriveTrainSubsystem;
 import jaci.pathfinder.modifiers.TankModifier;
 
 public class FollowMotionProfileCommand extends Command {
-    protected TankModifier motionProfile;
-    protected double updatePeriod;
+    private TankModifier motionProfile;
+    private double updatePeriod;
 
     public FollowMotionProfileCommand(TankModifier motionProfile, double updatePeriod) {
         super("Follow Motion Profile");
         requires(Robot.driveTrainSubsystem);
 
-        this.motionProfile = motionProfile;
-        this.updatePeriod = updatePeriod;
+        setMotionProfile(motionProfile, updatePeriod);
     }
 
     @Override
@@ -35,5 +34,10 @@ public class FollowMotionProfileCommand extends Command {
     @Override
     protected boolean isFinished() {
         return Robot.driveTrainSubsystem.getProfileStatus() == DriveTrainSubsystem.Status.kDone;
+    }
+
+    public void setMotionProfile(TankModifier motionProfile, double updatePeriod) {
+        this.motionProfile = motionProfile;
+        this.updatePeriod = updatePeriod;
     }
 }

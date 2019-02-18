@@ -4,16 +4,14 @@ import edu.wpi.first.wpilibj.command.Command;
 import frc.robot.Robot;
 
 public class MoveToPositionCommand extends Command {
-    protected double leftPosition, rightPosition;
-    protected boolean relative;
+    private double leftPosition, rightPosition;
+    private boolean relative;
 
     public MoveToPositionCommand(double leftPosition, double rightPosition, boolean relative) {
         super("Move To");
         requires(Robot.driveTrainSubsystem);
 
-        this.leftPosition = leftPosition;
-        this.rightPosition = rightPosition;
-        this.relative = relative;
+        setPosition(leftPosition, rightPosition, relative);
     }
 
     @Override
@@ -31,5 +29,19 @@ public class MoveToPositionCommand extends Command {
     @Override
     protected boolean isFinished() {
         return Math.abs(Robot.driveTrainSubsystem.getLeftPos() - leftPosition) < 20;
+    }
+
+    public void setPosition(double leftPosition, double rightPosition, boolean relative) {
+        this.leftPosition = leftPosition;
+        this.rightPosition = rightPosition;
+        this.relative = relative;
+    }
+
+    public double getLeftPosition() {
+        return leftPosition;
+    }
+
+    public double getRightPosition() {
+        return rightPosition;
     }
 }
