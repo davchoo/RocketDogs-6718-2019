@@ -8,6 +8,9 @@
 package frc.robot;
 
 
+import edu.wpi.cscore.UsbCamera;
+import edu.wpi.cscore.VideoMode;
+import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.command.Scheduler;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -16,11 +19,6 @@ import frc.robot.commands.OIDriverCommand;
 import frc.robot.subsystem.*;
 
 public class Robot extends TimedRobot {
-    private static final String kDefaultAuto = "Default";
-    private static final String kCustomAuto = "My Auto";
-    private String m_autoSelected;
-    private final SendableChooser<String> m_chooser = new SendableChooser<>();
-
     public static OI oi;
 
     public static ClawSubsystem clawSubsystem;
@@ -28,6 +26,7 @@ public class Robot extends TimedRobot {
     public static PowerSubsystem powerSubsystem;
     public static RampSubsystem rampSubsystem;
     public static VisionSubsystem visionSubsystem;
+    public static UsbCamera camera;
 
     /**
      * This function is run when the robot is first started up and should be
@@ -42,9 +41,8 @@ public class Robot extends TimedRobot {
         Robot.visionSubsystem = new VisionSubsystem();
         Robot.oi = new OI();
 
-        m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
-        m_chooser.addOption("My Auto", kCustomAuto);
-        SmartDashboard.putData("Auto choices", m_chooser);
+        camera = CameraServer.getInstance().startAutomaticCapture();
+        camera.setVideoMode(VideoMode.PixelFormat.kMJPEG, 320, 240, 15);
     }
 
     /**
@@ -72,9 +70,7 @@ public class Robot extends TimedRobot {
      */
     @Override
     public void autonomousInit() {
-        m_autoSelected = m_chooser.getSelected();
-        // m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
-        System.out.println("Auto selected: " + m_autoSelected);
+        Scheduler.getInstance().add(new OIDriverCommand());
     }
 
     /**
@@ -82,15 +78,7 @@ public class Robot extends TimedRobot {
      */
     @Override
     public void autonomousPeriodic() {
-        switch (m_autoSelected) {
-            case kCustomAuto:
-                // Put custom auto code here
-                break;
-            case kDefaultAuto:
-            default:
-                // Put default auto code here
-                break;
-        }
+        Scheduler.getInstance().run();
     }
 
     @Override

@@ -117,7 +117,7 @@ public class DriveTrainSubsystem extends Subsystem {
      */
     public void arcadeDrive(double speed, double zRotation, boolean squareInput) {
         speed = applyDeadBand(speed, 0.15);
-        zRotation = applyDeadBand(zRotation, 0.1);
+        zRotation = applyDeadBand(zRotation, 0.05);
         
         if (squareInput) {
             speed = Math.copySign(speed * speed, speed);

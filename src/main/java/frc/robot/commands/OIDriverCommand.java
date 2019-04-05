@@ -5,9 +5,9 @@ import edu.wpi.first.wpilibj.command.Command;
 import frc.robot.Robot;
 
 public class OIDriverCommand extends Command {
-    public static final double SPEED_SENSITIVITY = 1;
-    public static final double Z_ROTATION_SENSITIVITY = 0.4;
-    public static final double CLAW_SENSITIVITY = 0.3;
+    public static final double SPEED_SENSITIVITY = 0.8 ;
+    public static final double Z_ROTATION_SENSITIVITY = 0.8;
+    public static final double CLAW_SENSITIVITY = 0.5;
 
     public OIDriverCommand() {
         super("OI Driver");
@@ -26,39 +26,33 @@ public class OIDriverCommand extends Command {
         // Drive train
         // Left bumper - drive straight
         // Right bumper - turn in place
-        double speed = SPEED_SENSITIVITY * -Robot.oi.controller.getY(GenericHID.Hand.kRight);
-        double zRot = Z_ROTATION_SENSITIVITY * Robot.oi.controller.getX(GenericHID.Hand.kRight);
-        if (Robot.oi.controller.getBumper(GenericHID.Hand.kLeft)) {
+        double speed = SPEED_SENSITIVITY * -Robot.oi.controller.getY();
+        double zRot = Z_ROTATION_SENSITIVITY * Robot.oi.controller.getX();
+        if (Robot.oi.controller.getRawButton(5)) {
             zRot = 0;
+        }else if (Robot.oi.controller.getTrigger()) {
+            zRot *= 0.5;
         }
-        if (Robot.oi.controller.getBumper(GenericHID.Hand.kRight)) {
+        if (Robot.oi.controller.getRawButton(6)) {
             speed = 0;
+        }else if (Robot.oi.controller.getRawButton(2)) {
+            speed *= 0.5;
         }
         Robot.driveTrainSubsystem.arcadeDrive(speed, zRot, true);
 
         // Ramp
         // Hold right trigger to move ramp with up and down
-        double rampSpeed = Robot.oi.controller.getY(GenericHID.Hand.kLeft);
-        boolean rampEnable = Robot.oi.controller.getTriggerAxis(GenericHID.Hand.kRight) < 0.1;
-        // Only allow the ramp to move if the operator wants it to
-        if (!rampEnable) {
-            rampSpeed = 0;
-        }
+        double rampSpeed = Robot.oi.otherController.getY(GenericHID.Hand.kLeft);
         Robot.rampSubsystem.set(rampSpeed);
 
         // Claw System
         // Left trigger holds
-        if (!rampEnable) {
-            if (Robot.oi.controller.getTriggerAxis(GenericHID.Hand.kLeft) > 0.1) {
-                Robot.clawSubsystem.hold();
-            } else {
-                double clawSpeed = CLAW_SENSITIVITY * Robot.oi.controller.getX(GenericHID.Hand.kLeft);
-                Robot.clawSubsystem.set(clawSpeed);
-            }
+        if (Robot.oi.otherController.getTriggerAxis(GenericHID.Hand.kRight) > 0.1) {
+            Robot.clawSubsystem.hold();
         } else {
-            Robot.clawSubsystem.disable();
+            double clawSpeed = CLAW_SENSITIVITY * Robot.oi.otherController.getX(GenericHID.Hand.kRight);
+            Robot.clawSubsystem.set(clawSpeed);
         }
-
     }
 
     @Override
